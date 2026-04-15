@@ -44,6 +44,13 @@ If output is `0`, configuration is complete. Tell the user:
 > "OpenSpec is configured. Run `bash setup.sh` to install git hooks.
 >  After that, any commit touching source files will require a spec."
 
+**Step 6 — Create or update README.md:**
+After configuration is complete, create or update `README.md` with:
+- Project name and description (from `config.yaml`)
+- How to install/run the project
+- How OpenSpec works in this repo (brief overview)
+- Link to `.openspec/` for spec details
+
 Do not write any production code until the config has no `{{` tokens.
 
 ---
@@ -77,6 +84,9 @@ When the user asks you to implement something new:
    Include the `.openspec/specs/<slug>.spec.yaml` file in the same commit
    (or PR) as the production code changes.
 
+6. **Update README.md** to reflect any new features, changed behavior, or
+   new usage instructions introduced by the implementation.
+
 ---
 
 ## Validating Spec Coverage
@@ -97,6 +107,27 @@ gh openspec scaffold "fix login crash" --type bugfix  # bugfix spec
 ```
 
 Spec files are created at `.openspec/specs/<slug>.spec.yaml`.
+
+---
+
+## Documentation Standards
+
+### README.md
+- Always create `README.md` during first-time setup (Step 6 above).
+- Always update `README.md` when implementing a feature or fixing a bug that changes behavior or usage.
+- Keep it accurate and up to date — it is the entry point for any developer opening this repo.
+
+### Diagrams
+- **Always use [Mermaid](https://mermaid.js.org/) syntax** for any diagrams (flowcharts, sequence diagrams, ERDs, etc.).
+- Mermaid renders natively on GitHub inside fenced code blocks:
+  ````
+  ```mermaid
+  graph TD
+      A[Start] --> B[End]
+  ```
+  ````
+- Do **not** use image-based diagrams (PNG, SVG files, external tools) unless the user explicitly requests it.
+- Place diagrams directly in `README.md` or in the relevant spec/doc file where they add the most clarity.
 
 ---
 
