@@ -59,7 +59,7 @@ jobs:
       - name: Validate spec files
         run: |
           FAIL=0
-          REQUIRED_FIELDS="title description acceptance_criteria status"
+          REQUIRED_FIELDS="title description acceptance_criteria test_plan status"
 
           while IFS= read -r -d '' spec; do
             name=$(basename "$spec")

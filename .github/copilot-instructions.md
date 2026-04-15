@@ -8,7 +8,9 @@ This project uses **OpenSpec** for spec-driven development.
 2. If not, suggest creating one:
    > "I don't see a spec for this feature. Should I scaffold one with
    > `gh openspec scaffold '<feature-name>'`?"
-3. Reference `acceptance_criteria` in the spec as the definition of done.
+3. Do not write production code if the spec is in `draft` status or has no `test_plan`.
+4. Reference `acceptance_criteria` as the definition of done.
+5. Reference `test_plan` to know what tests to write — write them in the same PR.
 
 ## Spec Files
 

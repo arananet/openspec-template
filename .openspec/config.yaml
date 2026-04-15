@@ -49,6 +49,14 @@ ci:
   notify_slack: false
   slack_webhook: ""
 
+agents:
+  spec_review:
+    enabled: true
+    model: "openai/gpt-4o-mini"
+    trigger: "pull_request"
+    post_as: "pr-comment"
+    goal_file: ".github/agents/spec-review.md"
+
 hooks:
   pre_commit:
     enabled: true
