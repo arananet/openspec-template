@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# OpenSpec commit-msg hook
+# Optionally enforces a spec reference in commit messages.
+# Disabled by default — enable in .openspec/config.yaml:
+#   hooks.commit_msg.require_spec_reference: true
+
+set -euo pipefail
+
+CONFIG=".openspec/config.yaml"
+[ -f "$CONFIG" ] || exit 0
+
+# Read enforcement setting (default: false)
+REQUIRE=$(grep 'require_spec_reference:' "$CONFIG" 2>/dev/null | awk '{print $2}' | tr -d '"' | head -1)
+[ "$REQUIRE" = "true" ] || exit 0
+
+MSG_FILE="$1"
+MSG=$(cat "$MSG_FILE")
+
+# Allow merge commits, revert commits, and fixup commits
+if echo "$MSG" | grep -qE '^(Merge|Revert|fixup!|squash!)'; then
+  exit 0
+fi
+
+# Check for spec reference: "spec: <slug>" anywhere in the message
+if ! echo "$MSG" | grep -qiE 'spec:\s*\S+'; then
+  echo ""
+  echo "OpenSpec: commit message must include a spec reference."
+  echo ""
+  echo "  Format: include 'spec: <slug>' in the commit body"
+  echo "  Example:"
+  echo "    feat: add login form"
+  echo ""
+  echo "    spec: user-authentication"
+  echo ""
+  echo "  To disable this check, set in .openspec/config.yaml:"
+  echo "    hooks.commit_msg.require_spec_reference: false"
+  echo ""
+  exit 1
+fi
+
+exit 0

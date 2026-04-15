@@ -1,0 +1,50 @@
+# OpenSpec Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+# This file is intentionally blank. Fill it in one of two ways:
+#
+#   A) Open this project in Claude Code — it reads CLAUDE.md, detects the
+#      blank fields below, and interviews you to fill them in automatically.
+#
+#   B) Edit manually — replace every value in quotes below with your own.
+#
+# The CI workflow will create a GitHub issue reminding you to do this if the
+# placeholder tokens are still present on your first push.
+# ─────────────────────────────────────────────────────────────────────────────
+
+project:
+  name: "{{PROJECT_NAME}}"
+  owner: "{{GITHUB_OWNER}}"
+  team: "{{TEAM_NAME}}"
+  domain: "{{PROJECT_DOMAIN}}"
+  description: "{{PROJECT_DESCRIPTION}}"
+
+spec:
+  required_fields:
+    - title
+    - description
+    - acceptance_criteria
+    - status
+  enforce_on_pr: true
+  enforce_on_commit: true
+  min_acceptance_criteria: 1
+  statuses:
+    - draft
+    - review
+    - approved
+  approved_required_for_merge: false
+
+ci:
+  fail_on_missing_spec: true
+  fail_on_draft_spec: false
+  notify_slack: false
+  slack_webhook: ""
+
+hooks:
+  pre_commit:
+    enabled: true
+    block_if_no_spec: true
+    warn_only: false
+  commit_msg:
+    enabled: true
+    require_spec_reference: false
+    pattern: "spec: <slug>"

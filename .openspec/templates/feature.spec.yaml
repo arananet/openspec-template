@@ -1,0 +1,33 @@
+# Feature Spec — created by gh openspec scaffold
+# Fill in all sections before moving status to 'review'.
+# Acceptance criteria are your definition of done — be specific.
+
+title: "{{FEATURE_NAME}}"
+slug: "{{SLUG}}"
+type: feature
+status: {{STATUS}}   # draft | review | approved
+
+author: "{{AUTHOR}}"
+created_at: "{{DATE}}"
+updated_at: "{{DATE}}"
+
+description: |
+  <!-- One paragraph describing WHAT this feature does and WHY it exists.
+       Focus on the user or system outcome, not the implementation approach. -->
+
+acceptance_criteria:
+  - "<!-- Given <context>, when <action>, then <outcome> -->"
+  - "<!-- Add as many as needed. These drive QA and code review. -->"
+
+out_of_scope:
+  - "<!-- Explicitly list things NOT included so reviewers don't assume. -->"
+
+technical_notes: |
+  <!-- Optional: constraints, dependencies, architecture decisions.
+       Do not design the solution here — save implementation details for the PR. -->
+
+linked_issues: []
+  # - "https://github.com/{{GITHUB_OWNER}}/{{PROJECT_NAME}}/issues/1"
+
+linked_prs: []
+  # - "https://github.com/{{GITHUB_OWNER}}/{{PROJECT_NAME}}/pull/1"

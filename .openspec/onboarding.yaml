@@ -1,0 +1,77 @@
+# OpenSpec Onboarding Questions
+# AI agents: read CLAUDE.md first, then use this file to drive the onboarding interview.
+#
+# Each question maps to a {{PLACEHOLDER}} in .openspec/config.yaml.
+# After collecting answers, write them directly into config.yaml.
+
+version: "1"
+
+questions:
+  - id: project.name
+    prompt: "What is the name of this project? (short, URL-safe slug preferred, e.g. 'payments-api')"
+    required: true
+    type: string
+    maps_to: "project.name in config.yaml"
+    placeholder: "{{PROJECT_NAME}}"
+
+  - id: project.team
+    prompt: "What team owns this project? (e.g. 'platform', 'data-eng', 'growth')"
+    required: true
+    type: string
+    maps_to: "project.team in config.yaml"
+    placeholder: "{{TEAM_NAME}}"
+
+  - id: project.domain
+    prompt: "What domain or product area does this belong to? (e.g. 'payments', 'auth', 'reporting')"
+    required: false
+    type: string
+    default: "engineering"
+    maps_to: "project.domain in config.yaml"
+    placeholder: "{{PROJECT_DOMAIN}}"
+
+  - id: project.description
+    prompt: "One sentence describing what this project does."
+    required: true
+    type: string
+    maps_to: "project.description in config.yaml"
+    placeholder: "{{PROJECT_DESCRIPTION}}"
+
+  - id: spec.enforce_on_pr
+    prompt: "Block PRs that have no spec file changes? (yes/no, default: yes)"
+    required: false
+    type: boolean
+    default: true
+    maps_to: "spec.enforce_on_pr in config.yaml"
+
+  - id: spec.enforce_on_commit
+    prompt: "Block local commits via pre-commit hook when no spec exists? (yes/no, default: yes)"
+    required: false
+    type: boolean
+    default: true
+    maps_to: "spec.enforce_on_commit in config.yaml"
+
+  - id: ci.fail_on_missing_spec
+    prompt: "Fail CI when a PR has no spec changes? (yes/no, default: yes)"
+    required: false
+    type: boolean
+    default: true
+    maps_to: "ci.fail_on_missing_spec in config.yaml"
+
+  - id: first_spec
+    prompt: "What is the first feature you want to build? I'll scaffold an initial spec file for it. (press Enter to skip)"
+    required: false
+    type: string
+    action: "run `gh openspec scaffold '<answer>'` after config is written"
+
+after_completion:
+  instructions: |
+    After collecting all answers:
+    1. Write string values into .openspec/config.yaml by replacing the {{PLACEHOLDER}} tokens.
+       For boolean answers: write `true` or `false` (unquoted) to the corresponding field.
+    2. If the user answered the `first_spec` question, run:
+          gh openspec scaffold "<their answer>"
+       and show them the created .openspec/specs/<slug>.spec.yaml file.
+    3. Tell the user:
+          "OpenSpec is configured. Run `bash setup.sh` to install git hooks.
+           After that, any commit touching source files will require a corresponding spec."
+    4. Offer to help them fill in the acceptance criteria for their first spec.

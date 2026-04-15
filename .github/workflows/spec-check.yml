@@ -1,0 +1,84 @@
+name: OpenSpec PR Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  spec-check:
+    name: Validate Spec Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # required for git diff against base branch
+
+      - name: Check OpenSpec is initialized
+        run: |
+          if [ ! -f .openspec/config.yaml ]; then
+            echo "::error::OpenSpec not initialized. Run 'gh openspec init'."
+            exit 1
+          fi
+          echo "✓ .openspec/config.yaml found"
+
+      - name: Check config has no placeholder tokens
+        run: |
+          if grep -q '{{' .openspec/config.yaml; then
+            echo "::error::config.yaml still contains {{PLACEHOLDER}} values."
+            echo "Open this project in Claude Code or edit .openspec/config.yaml manually."
+            exit 1
+          fi
+          echo "✓ config.yaml is fully configured"
+
+      - name: Check spec coverage for changed files
+        run: |
+          BASE="${{ github.base_ref }}"
+          CHANGED=$(git diff --name-only "origin/${BASE}...HEAD")
+
+          SOURCE=$(echo "$CHANGED" | grep -E '\.(py|ts|js|tsx|jsx|go|java|rb|rs|cpp|c|cs|swift|kt|php)$' || true)
+          SPECS=$(echo "$CHANGED"  | grep -E '\.openspec/specs/.*\.spec\.yaml$' || true)
+
+          if [ -n "$SOURCE" ] && [ -z "$SPECS" ]; then
+            echo "::error::This PR modifies source files but includes no spec changes."
+            echo ""
+            echo "Changed source files:"
+            echo "$SOURCE" | sed 's/^/  /'
+            echo ""
+            echo "Fix: gh openspec scaffold '<feature-name>'"
+            exit 1
+          fi
+
+          if [ -n "$SPECS" ]; then
+            echo "✓ Spec changes detected:"
+            echo "$SPECS" | sed 's/^/  /'
+          else
+            echo "✓ No source file changes — spec not required"
+          fi
+
+      - name: Validate spec files
+        run: |
+          FAIL=0
+          REQUIRED_FIELDS="title description acceptance_criteria status"
+
+          while IFS= read -r -d '' spec; do
+            name=$(basename "$spec")
+            for field in $REQUIRED_FIELDS; do
+              if ! grep -q "^${field}:" "$spec"; then
+                echo "::error file=${spec}::Missing required field: ${field}"
+                FAIL=1
+              fi
+            done
+
+            STATUS=$(grep '^status:' "$spec" | head -1 | awk '{print $2}' | tr -d '"')
+            if [[ "$STATUS" != "draft" && "$STATUS" != "review" && "$STATUS" != "approved" ]]; then
+              echo "::error file=${spec}::Invalid status '${STATUS}' (must be draft|review|approved)"
+              FAIL=1
+            fi
+
+            if [ $FAIL -eq 0 ]; then
+              echo "✓ $name"
+            fi
+          done < <(find .openspec/specs -name "*.spec.yaml" ! -name ".gitkeep" -print0 2>/dev/null)
+
+          exit $FAIL

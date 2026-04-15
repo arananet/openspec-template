@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# OpenSpec pre-commit hook
+# Blocks commits that touch source files without any spec file involvement.
+# Bypass with: git commit --no-verify
+
+set -euo pipefail
+
+CONFIG=".openspec/config.yaml"
+
+# Skip entirely if OpenSpec not initialized
+[ -f "$CONFIG" ] || exit 0
+
+# Read enforcement setting
+ENFORCE=$(grep 'block_if_no_spec:' "$CONFIG" 2>/dev/null | awk '{print $2}' | tr -d '"' | head -1)
+[ "$ENFORCE" = "true" ] || exit 0
+
+# Get staged files
+STAGED=$(git diff --cached --name-only 2>/dev/null || true)
+[ -n "$STAGED" ] || exit 0
+
+# Check for staged source file changes
+SOURCE=$(echo "$STAGED" | grep -E '\.(py|ts|js|tsx|jsx|go|java|rb|rs|cpp|c|cs|swift|kt|php)$' || true)
+
+# No source files staged → allow the commit
+[ -n "$SOURCE" ] || exit 0
+
+# Check for staged spec file changes
+SPEC=$(echo "$STAGED" | grep -E '\.openspec/specs/.*\.spec\.yaml$' || true)
+
+if [ -z "$SPEC" ]; then
+  echo ""
+  echo "╔══════════════════════════════════════════════════════════════╗"
+  echo "║  OpenSpec: Commit blocked — no spec changes included         ║"
+  echo "╚══════════════════════════════════════════════════════════════╝"
+  echo ""
+  echo "  This commit touches source files but includes no spec changes."
+  echo ""
+  echo "  Staged source files:"
+  echo "$SOURCE" | sed 's/^/    /'
+  echo ""
+  echo "  Options:"
+  echo "    1. Create a spec:    gh openspec scaffold '<feature-name>'"
+  echo "    2. Add existing spec: git add .openspec/specs/<slug>.spec.yaml"
+  echo "    3. Bypass (sparingly): git commit --no-verify"
+  echo ""
+  exit 1
+fi
+
+exit 0

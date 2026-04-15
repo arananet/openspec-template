@@ -1,0 +1,26 @@
+{
+  "name": "{{PROJECT_NAME}}",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+
+  // Runs once when the Codespace or Dev Container is first created.
+  // Installs git hooks so OpenSpec enforcement is active from the first commit.
+  "postCreateCommand": "bash setup.sh && echo '✓ OpenSpec git hooks installed'",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ],
+      "settings": {
+        "github.copilot.chat.codeGeneration.instructions": [
+          { "file": ".github/copilot-instructions.md" }
+        ]
+      }
+    }
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  }
+}

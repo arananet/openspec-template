@@ -1,0 +1,36 @@
+# Bugfix Spec — created by gh openspec scaffold --type bugfix
+# Fill in all sections before moving status to 'review'.
+
+title: "{{FEATURE_NAME}}"
+slug: "{{SLUG}}"
+type: bugfix
+status: {{STATUS}}   # draft | review | approved
+
+author: "{{AUTHOR}}"
+created_at: "{{DATE}}"
+updated_at: "{{DATE}}"
+
+description: |
+  <!-- Describe the bug: what IS happening vs what SHOULD happen. -->
+
+root_cause: |
+  <!-- If known: what caused the bug. Leave as "under investigation" if unknown. -->
+
+reproduction_steps:
+  - "<!-- Step 1 -->"
+  - "<!-- Step 2 -->"
+  - "<!-- Step 3 — observed result -->"
+
+acceptance_criteria:
+  - "<!-- The bug is fixed when: ... -->"
+  - "<!-- Edge case: ... -->"
+
+regression_test: |
+  <!-- Describe a test case that would catch this bug in the future.
+       Ideally reference the test file/function that was added. -->
+
+linked_issues: []
+  # - "https://github.com/{{GITHUB_OWNER}}/{{PROJECT_NAME}}/issues/1"
+
+linked_prs: []
+  # - "https://github.com/{{GITHUB_OWNER}}/{{PROJECT_NAME}}/pull/1"

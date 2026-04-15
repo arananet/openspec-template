@@ -1,0 +1,109 @@
+# Claude Code Instructions — OpenSpec Project
+
+## OpenSpec Status Check (run this first on every session start)
+
+Before doing any other work, check whether this project has been configured:
+
+```bash
+grep -c '{{' .openspec/config.yaml 2>/dev/null && echo "STATUS: NOT_CONFIGURED" || echo "STATUS: CONFIGURED"
+```
+
+- **`NOT_CONFIGURED`** → Follow "First-Time Setup" below before anything else.
+- **`CONFIGURED`** → Skip to "Working on Features".
+
+---
+
+## First-Time Setup (AI-Guided Onboarding)
+
+This project was created with OpenSpec enforcement, but `.openspec/config.yaml`
+still has placeholder values that need to be filled in.
+
+**Step 1 — Read the question schema:**
+Read `.openspec/onboarding.yaml`. It contains the list of questions to ask,
+what each answer maps to in `config.yaml`, and instructions for what to do after.
+
+**Step 2 — Interview the user:**
+Ask each `required: true` question. For `required: false` questions, show the
+default and let the user accept or change it.
+
+**Step 3 — Write the config:**
+Edit `.openspec/config.yaml`, replacing each `{{PLACEHOLDER}}` token with the
+user's answer. For boolean fields, write `true` or `false` (no quotes).
+
+**Step 4 — Scaffold the first spec (if the user named a feature):**
+```bash
+gh openspec scaffold "<feature-name>"
+```
+Show the user the created file and offer to help fill in `acceptance_criteria`.
+
+**Step 5 — Confirm setup is complete:**
+```bash
+grep -c '{{' .openspec/config.yaml
+```
+If output is `0`, configuration is complete. Tell the user:
+> "OpenSpec is configured. Run `bash setup.sh` to install git hooks.
+>  After that, any commit touching source files will require a spec."
+
+Do not write any production code until the config has no `{{` tokens.
+
+---
+
+## Working on Features
+
+When the user asks you to implement something new:
+
+1. **Check for an existing spec:**
+   ```bash
+   ls .openspec/specs/
+   ```
+   Look for a `<feature-slug>.spec.yaml` file matching the requested feature.
+
+2. **If no spec exists — create one first:**
+   ```bash
+   gh openspec scaffold "<feature-name>"
+   ```
+   Ask the user to confirm or fill in:
+   - `description`: what this does and why
+   - `acceptance_criteria`: definition of done (at least one item)
+   - `out_of_scope`: what this explicitly does NOT cover
+
+3. **Do not write production code** until the spec has at least one
+   `acceptance_criteria` item and `status` is `review` or `approved`.
+
+4. **Use the spec as your definition of done.**
+   Each acceptance criterion should be verifiable in the implementation.
+
+5. **Commit the spec with the implementation:**
+   Include the `.openspec/specs/<slug>.spec.yaml` file in the same commit
+   (or PR) as the production code changes.
+
+---
+
+## Validating Spec Coverage
+
+```bash
+gh openspec check           # validate all specs in this repo
+gh openspec check --strict  # treat warnings as errors
+gh openspec check --pr 42   # check spec coverage for PR #42
+```
+
+---
+
+## Scaffolding a New Spec Manually
+
+```bash
+gh openspec scaffold "user authentication"         # feature spec
+gh openspec scaffold "fix login crash" --type bugfix  # bugfix spec
+```
+
+Spec files are created at `.openspec/specs/<slug>.spec.yaml`.
+
+---
+
+## Project Context
+
+- **Config**: `.openspec/config.yaml` ← fill this in during onboarding
+- **Spec templates**: `.openspec/templates/`
+- **Active specs**: `.openspec/specs/`
+- **Onboarding questions**: `.openspec/onboarding.yaml`
+- **OpenSpec version**: 1
