@@ -1,0 +1,63 @@
+# Feature Spec — template-completeness
+# Status must reach 'review' before any production code is written.
+
+title: "Reduce manual configuration when creating a repo from the OpenSpec template"
+slug: "template-completeness"
+type: feature
+status: draft
+
+author: "arananet"
+created_at: "2026-04-15"
+updated_at: "2026-04-15"
+
+description: |
+  Every time a new repo is created from this template, the user must manually
+  fill in project-specific values, set enforcement levels, choose defaults, and
+  write boilerplate content (README, AGENTS.md, copilot-instructions.md).
+
+  This feature reduces that friction in three ways:
+  1. Smarter defaults — all non-project-specific settings ship pre-filled with
+     the best DevOps defaults so the onboarding interview only covers the 4-5
+     truly project-specific questions.
+  2. Personal base config layer — a .openspec/defaults.yaml file lets users
+     store org-level preferences (owner, team, preferred test runner, CI flags)
+     once, so future repos inherit them automatically without re-answering the
+     same questions.
+  3. Richer out-of-the-box scaffolding — when a repo is created from the
+     template, it generates a complete starting point: pre-written README with
+     Mermaid diagram, fully substituted AGENTS.md and copilot-instructions.md,
+     and a working example spec so the user can see the format immediately.
+
+acceptance_criteria:
+  - "config.yaml ships with all non-project-specific fields pre-filled (enforcement, CI gates, agent config, hooks) — only PROJECT_NAME, GITHUB_OWNER, TEAM_NAME, PROJECT_DESCRIPTION, and TEST_COMMAND remain as placeholders"
+  - "A .openspec/defaults.yaml file exists with documented fields for owner, team, domain, test_command, and enforce_on_commit — onboarding reads it and skips questions that already have a value"
+  - "AGENTS.md and copilot-instructions.md contain {{PROJECT_NAME}} as the only remaining placeholder — all other content is complete and accurate"
+  - "README.md exists in the template root with project overview, OpenSpec workflow diagram (Mermaid), quick-start steps, and a link to .openspec/"
+  - "An example spec file exists at .openspec/specs/example-feature.spec.yaml showing a fully filled-in feature spec so users have a reference"
+  - "onboarding.yaml skips questions whose answers are already present in defaults.yaml"
+
+test_plan:
+  - "Unit: validate that config.yaml has zero non-project-specific {{PLACEHOLDER}} tokens after this change"
+  - "Unit: validate that defaults.yaml contains all documented fields with inline comments"
+  - "Integration: simulate onboarding with a pre-filled defaults.yaml and confirm skipped questions match filled fields"
+  - "Integration: verify AGENTS.md and copilot-instructions.md have no unreplaced placeholders except {{PROJECT_NAME}}"
+  - "Manual: create a new repo from the template and confirm the README, example spec, and defaults.yaml are present and correct"
+
+out_of_scope:
+  - "Automating the substitution of {{PROJECT_NAME}} at repo-creation time (that requires a GitHub App or Actions runner beyond this template)"
+  - "A CLI tool or setup wizard beyond what already exists in setup.sh and onboarding.yaml"
+  - "Per-language default test commands (user still provides their test command during onboarding)"
+
+technical_notes: |
+  defaults.yaml should be read by CLAUDE.md onboarding logic and referenced in
+  onboarding.yaml after_completion instructions. It is NOT a replacement for
+  config.yaml — it is a personal override layer that pre-answers questions.
+
+  The example spec should use a fictional feature so it is clearly illustrative
+  and not confused with a real spec. Mark it with a comment at the top.
+
+  README.md Mermaid diagram should show the OpenSpec workflow:
+  PR opened → spec-check (deterministic) + spec-ai-review (agentic) → merge.
+
+linked_issues: []
+linked_prs: []
