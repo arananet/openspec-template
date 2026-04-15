@@ -57,6 +57,20 @@ questions:
     default: true
     maps_to: "ci.fail_on_missing_spec in config.yaml"
 
+  - id: testing.test_command
+    prompt: "What command runs your test suite? (e.g. 'npm test', 'pytest', 'go test ./...')"
+    required: true
+    type: string
+    maps_to: "testing.test_command in config.yaml"
+    placeholder: "{{TEST_COMMAND}}"
+
+  - id: testing.require_tests
+    prompt: "Require a test_plan in every spec and fail CI if tests are missing? (yes/no, default: yes)"
+    required: false
+    type: boolean
+    default: true
+    maps_to: "testing.require_tests and testing.fail_on_missing_tests and ci.fail_on_missing_tests in config.yaml"
+
   - id: first_spec
     prompt: "What is the first feature you want to build? I'll scaffold an initial spec file for it. (press Enter to skip)"
     required: false
@@ -74,4 +88,6 @@ after_completion:
     3. Tell the user:
           "OpenSpec is configured. Run `bash setup.sh` to install git hooks.
            After that, any commit touching source files will require a corresponding spec."
-    4. Offer to help them fill in the acceptance criteria for their first spec.
+    4. Offer to help them fill in the acceptance criteria and test_plan for their first spec.
+    5. Remind the user that every spec requires a `test_plan` and that CI will fail
+       if tests are missing or failing, following DevOps best practices.

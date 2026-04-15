@@ -19,6 +19,14 @@ acceptance_criteria:
   - "<!-- Given <context>, when <action>, then <outcome> -->"
   - "<!-- Add as many as needed. These drive QA and code review. -->"
 
+test_plan:
+  - "<!-- Unit test: <what function/module is tested and what it asserts> -->"
+  - "<!-- Integration test (if applicable): <what flow is tested end-to-end> -->"
+
+qa_notes: |
+  <!-- Manual QA steps, edge cases to verify, or environments to test in.
+       Leave blank if fully covered by automated tests. -->
+
 out_of_scope:
   - "<!-- Explicitly list things NOT included so reviewers don't assume. -->"
 

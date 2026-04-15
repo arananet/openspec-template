@@ -75,16 +75,21 @@ When the user asks you to implement something new:
    - `out_of_scope`: what this explicitly does NOT cover
 
 3. **Do not write production code** until the spec has at least one
-   `acceptance_criteria` item and `status` is `review` or `approved`.
+   `acceptance_criteria` item, at least one `test_plan` item, and `status`
+   is `review` or `approved`.
 
 4. **Use the spec as your definition of done.**
    Each acceptance criterion should be verifiable in the implementation.
 
-5. **Commit the spec with the implementation:**
+5. **Write tests alongside the implementation.**
+   Every spec requires a `test_plan`. Tests must be written as part of the
+   same PR — not as a follow-up. CI will fail if tests are missing or failing.
+
+6. **Commit the spec with the implementation:**
    Include the `.openspec/specs/<slug>.spec.yaml` file in the same commit
    (or PR) as the production code changes.
 
-6. **Update README.md** to reflect any new features, changed behavior, or
+7. **Update README.md** to reflect any new features, changed behavior, or
    new usage instructions introduced by the implementation.
 
 ---
@@ -107,6 +112,37 @@ gh openspec scaffold "fix login crash" --type bugfix  # bugfix spec
 ```
 
 Spec files are created at `.openspec/specs/<slug>.spec.yaml`.
+
+---
+
+## Testing & QA Standards
+
+Every feature or bugfix implemented through OpenSpec **must** include tests. This is enforced at the spec, commit, and CI levels.
+
+### Spec requirements
+- Every spec must have a `test_plan` section with at least one item before status moves to `review`.
+- `test_plan` items should map 1-to-1 with `acceptance_criteria` where possible.
+- Bugfix specs must also fill in `regression_test` with the specific file/function added.
+
+### Implementation requirements
+- Write unit tests for all new logic.
+- Write integration tests for any new API endpoints, data flows, or cross-service interactions.
+- Do not merge a spec without its tests — CI blocks on missing or failing tests.
+
+### CI gates
+The following CI checks are enforced (configured in `.openspec/config.yaml`):
+- `ci.run_tests: true` — test suite runs on every PR.
+- `ci.fail_on_test_failure: true` — failing tests block merge.
+- `ci.fail_on_missing_tests: true` — PRs with no test changes alongside source changes are flagged.
+
+### Running tests locally
+```bash
+# Use the test command configured during onboarding (testing.test_command in config.yaml)
+# Examples:
+npm test
+pytest
+go test ./...
+```
 
 ---
 
