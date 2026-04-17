@@ -148,3 +148,7 @@ Required fields: `title`, `description`, `acceptance_criteria`, `test_plan`, `st
 Status lifecycle: `draft` → `review` → `approved`
 
 > Code can only be written when status is `review` or `approved`.
+
+---
+
+**Developer:** Eduardo Arana
