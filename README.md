@@ -152,3 +152,5 @@ Status lifecycle: `draft` → `review` → `approved`
 ---
 
 **Developer:** Eduardo Arana
+
+**License:** [MIT](LICENSE)
