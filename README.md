@@ -154,3 +154,7 @@ Status lifecycle: `draft` → `review` → `approved`
 **Developer:** Eduardo Arana
 
 **License:** [MIT](LICENSE)
+
+---
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/H2H51MPWG)
