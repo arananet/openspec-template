@@ -126,6 +126,59 @@ Spec files are created at `.openspec/specs/<slug>.spec.yaml`.
 
 ---
 
+## Coding Guidelines (Karpathy)
+
+> These guidelines reduce common LLM coding mistakes. They bias toward caution over speed — use judgment on trivial tasks.
+> OpenSpec already handles **Goal-Driven Execution**: `acceptance_criteria` are your success criteria and `test_plan` items are your verification steps. The guidelines below cover what OpenSpec does not.
+
+### 1. Think Before Coding
+
+Before writing a single line of implementation:
+
+- **State your assumptions explicitly.** If uncertain about what the spec means, ask — don't guess silently.
+- **If multiple interpretations exist**, present them to the user. Don't pick one without saying so.
+- **If a simpler approach exists**, say so. Push back on the spec if the design is overcomplicated.
+- **If something is unclear**, stop. Name what's confusing. Ask. Do not hide confusion behind code.
+- Surface assumptions during spec creation or spec review — not mid-implementation.
+
+### 2. Simplicity First
+
+Write the minimum code that satisfies each acceptance criterion. Nothing more.
+
+- No features beyond what the AC requires.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that the spec didn't ask for.
+- No error handling for scenarios that cannot happen given the spec's stated context.
+- If you write 200 lines and it could be 50, rewrite it.
+- Ask yourself: *"Would a senior engineer say this is overcomplicated?"* If yes, simplify.
+
+### 3. Surgical Changes
+
+Touch only what the spec requires. Clean up only your own mess.
+
+- Don't "improve" adjacent code, comments, or formatting that is not part of the spec.
+- Don't refactor things that aren't broken unless the spec explicitly asks for it.
+- Match existing code style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it — don't delete it.
+- When your changes create orphans (unused imports, variables, functions), remove them.
+- Don't remove pre-existing dead code unless asked.
+- **The test:** every changed line should trace directly to an acceptance criterion in the spec.
+
+### 4. Goal-Driven Execution (OpenSpec integration)
+
+OpenSpec enforces this structurally. Map each implementation step to a spec artifact:
+
+- Each AC → a verifiable code change
+- Each `test_plan` item → a written test in the same PR
+- Multi-step tasks → state a brief plan before starting:
+  ```
+  [Step] → verify: [AC reference]
+  [Step] → verify: [test_plan item]
+  ```
+- Weak criteria ("make it work") → go back to the spec and sharpen the AC before coding.
+
+---
+
 ## Testing & QA Standards
 
 Every feature or bugfix implemented through OpenSpec **must** include tests. This is enforced at the spec, commit, and CI levels.

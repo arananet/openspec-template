@@ -10,6 +10,31 @@ Every feature must have a spec file before code is written.
 3. Write tests alongside the implementation — not as a follow-up.
 4. Do not merge a spec in `draft` status with production code.
 
+## Coding Guidelines (Karpathy)
+
+These apply on every implementation task, alongside the OpenSpec process.
+
+**Think Before Coding**
+- State assumptions explicitly before writing code. If uncertain, ask — don't guess.
+- If multiple interpretations of a spec exist, present them. Don't pick silently.
+- If something is unclear, stop and name what's confusing.
+
+**Simplicity First**
+- Write the minimum code that satisfies each `acceptance_criteria` item. Nothing more.
+- No unrequested abstractions, configurability, or error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+**Surgical Changes**
+- Touch only what the spec requires. Don't improve adjacent code that isn't broken.
+- Match existing style. Remove only orphans your own changes created.
+- Every changed line must trace to an acceptance criterion in the spec.
+
+**Goal-Driven Execution** *(OpenSpec handles this)*
+- `acceptance_criteria` = success criteria. `test_plan` = verification steps.
+- Both must be present and met before a PR is opened.
+
+---
+
 ## Quick Commands
 
 ```bash
