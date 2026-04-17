@@ -57,6 +57,13 @@ questions:
     default: true
     maps_to: "ci.fail_on_missing_spec in config.yaml"
 
+  - id: agents.implementation_skills.default
+    prompt: "Do you have a preferred domain skill for implementation? (e.g. 'frontend-pro', 'backend-pro', 'devops-pro' — press Enter to skip)"
+    required: false
+    type: string
+    default: null
+    maps_to: "agents.implementation_skills.default in config.yaml"
+
   - id: testing.test_command
     prompt: "What command runs your test suite? (e.g. 'npm test', 'pytest', 'go test ./...')"
     required: true

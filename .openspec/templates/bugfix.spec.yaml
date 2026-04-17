@@ -29,6 +29,10 @@ test_plan:
   - "<!-- Regression test: <what test was added to prevent recurrence> -->"
   - "<!-- Unit test (if applicable): <any new unit coverage added> -->"
 
+implementation_skill: null
+  # Optional: domain skill to invoke during implementation.
+  # Examples: "frontend-pro", "backend-pro", "devops-pro"
+
 regression_test: |
   <!-- Reference the specific test file/function added to cover this bug.
        Format: path/to/test_file.ext — test_function_name -->

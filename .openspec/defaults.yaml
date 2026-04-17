@@ -1,0 +1,22 @@
+# OpenSpec Personal Defaults
+# ─────────────────────────────────────────────────────────────────────────────
+# Fill this in once for your org/team. The onboarding interview will skip any
+# question whose answer is already set here.
+#
+# Commit this file to share defaults across the team.
+# Add it to .gitignore to keep it personal/local.
+# ─────────────────────────────────────────────────────────────────────────────
+
+owner: ""             # GitHub org or user, e.g. "acme-corp"
+team: ""              # Team name, e.g. "platform", "growth", "data-eng"
+domain: "engineering" # Product domain, e.g. "payments", "auth", "reporting"
+test_command: ""      # e.g. "npm test", "pytest", "go test ./..."
+
+enforce_on_commit: true   # Block commits when no spec exists for source changes
+enforce_on_pr: true       # Block PRs when no spec changes are included
+fail_on_missing_spec: true
+
+# Default domain skill to invoke during /openspec-implement.
+# Leave null to let Claude handle implementation without a specialist skill.
+# Options: "frontend-pro", "backend-pro", "data-eng-pro", "devops-pro", "mobile-pro"
+default_implementation_skill: null

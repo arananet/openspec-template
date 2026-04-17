@@ -4,11 +4,11 @@
 title: "Reduce manual configuration when creating a repo from the OpenSpec template"
 slug: "template-completeness"
 type: feature
-status: draft
+status: review
 
 author: "arananet"
 created_at: "2026-04-15"
-updated_at: "2026-04-15"
+updated_at: "2026-04-15"  # updated: added implementation_skill ACs and skills/hooks criteria
 
 description: |
   Every time a new repo is created from this template, the user must manually
@@ -30,18 +30,27 @@ description: |
 
 acceptance_criteria:
   - "config.yaml ships with all non-project-specific fields pre-filled (enforcement, CI gates, agent config, hooks) — only PROJECT_NAME, GITHUB_OWNER, TEAM_NAME, PROJECT_DESCRIPTION, and TEST_COMMAND remain as placeholders"
-  - "A .openspec/defaults.yaml file exists with documented fields for owner, team, domain, test_command, and enforce_on_commit — onboarding reads it and skips questions that already have a value"
+  - "A .openspec/defaults.yaml file exists with documented fields for owner, team, domain, test_command, enforce_on_commit, and default_implementation_skill — onboarding reads it and skips questions that already have a value"
   - "AGENTS.md and copilot-instructions.md contain {{PROJECT_NAME}} as the only remaining placeholder — all other content is complete and accurate"
   - "README.md exists in the template root with project overview, OpenSpec workflow diagram (Mermaid), quick-start steps, and a link to .openspec/"
   - "An example spec file exists at .openspec/specs/example-feature.spec.yaml showing a fully filled-in feature spec so users have a reference"
   - "onboarding.yaml skips questions whose answers are already present in defaults.yaml"
+  - "feature.spec.yaml and bugfix.spec.yaml templates include an optional implementation_skill field with inline documentation"
+  - "config.yaml agents section includes an implementation_skills map (frontend, backend, data, devops, mobile, default) so the right domain skill is invoked per spec"
+  - "Three Claude Code skills exist at .claude/commands/: openspec-scaffold.md, openspec-implement.md, openspec-check.md"
+  - "openspec-implement reads implementation_skill from the spec and invokes the matching domain skill before writing code"
+  - "A PreToolUse hook at .claude/settings.json intercepts git commit and blocks it when source files are staged without a corresponding spec change"
 
 test_plan:
-  - "Unit: validate that config.yaml has zero non-project-specific {{PLACEHOLDER}} tokens after this change"
-  - "Unit: validate that defaults.yaml contains all documented fields with inline comments"
+  - "Unit: validate config.yaml has zero non-project-specific {{PLACEHOLDER}} tokens after this change"
+  - "Unit: validate defaults.yaml contains all documented fields with inline comments"
+  - "Unit: verify feature.spec.yaml and bugfix.spec.yaml templates contain the implementation_skill field"
+  - "Unit: verify all three .claude/commands/ skill files exist and contain required frontmatter (allowed-tools)"
+  - "Unit: verify .claude/settings.json defines a PreToolUse hook targeting Bash"
   - "Integration: simulate onboarding with a pre-filled defaults.yaml and confirm skipped questions match filled fields"
   - "Integration: verify AGENTS.md and copilot-instructions.md have no unreplaced placeholders except {{PROJECT_NAME}}"
-  - "Manual: create a new repo from the template and confirm the README, example spec, and defaults.yaml are present and correct"
+  - "Manual: create a new repo from the template and confirm README, example spec, defaults.yaml, and .claude/ skills are present and correct"
+  - "Manual: stage a source file without a spec and attempt git commit — confirm hook blocks it"
 
 out_of_scope:
   - "Automating the substitution of {{PROJECT_NAME}} at repo-creation time (that requires a GitHub App or Actions runner beyond this template)"

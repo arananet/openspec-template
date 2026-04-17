@@ -18,13 +18,14 @@ grep -c '{{' .openspec/config.yaml 2>/dev/null && echo "STATUS: NOT_CONFIGURED" 
 This project was created with OpenSpec enforcement, but `.openspec/config.yaml`
 still has placeholder values that need to be filled in.
 
-**Step 1 — Read the question schema:**
-Read `.openspec/onboarding.yaml`. It contains the list of questions to ask,
-what each answer maps to in `config.yaml`, and instructions for what to do after.
+**Step 1 — Read the question schema and personal defaults:**
+Read `.openspec/onboarding.yaml` and `.openspec/defaults.yaml`.
+Any field already set in `defaults.yaml` (non-empty, non-placeholder) can be
+skipped in the interview — use that value directly in `config.yaml`.
 
 **Step 2 — Interview the user:**
-Ask each `required: true` question. For `required: false` questions, show the
-default and let the user accept or change it.
+Ask each `required: true` question that is not already answered in `defaults.yaml`.
+For `required: false` questions, show the default and let the user accept or change it.
 
 **Step 3 — Write the config:**
 Edit `.openspec/config.yaml`, replacing each `{{PLACEHOLDER}}` token with the
@@ -64,32 +65,42 @@ When the user asks you to implement something new:
    ls .openspec/specs/
    ```
    Look for a `<feature-slug>.spec.yaml` file matching the requested feature.
+   Alternatively, run `/openspec-check` to validate current coverage.
 
 2. **If no spec exists — create one first:**
    ```bash
    gh openspec scaffold "<feature-name>"
+   # or in Claude Code:
+   /openspec-scaffold <feature-name>
    ```
    Ask the user to confirm or fill in:
    - `description`: what this does and why
    - `acceptance_criteria`: definition of done (at least one item)
+   - `test_plan`: at least one test per AC
+   - `implementation_skill`: optional — check `agents.implementation_skills` in `config.yaml` for available domain skills
    - `out_of_scope`: what this explicitly does NOT cover
 
 3. **Do not write production code** until the spec has at least one
    `acceptance_criteria` item, at least one `test_plan` item, and `status`
    is `review` or `approved`.
 
-4. **Use the spec as your definition of done.**
-   Each acceptance criterion should be verifiable in the implementation.
+4. **Check for a domain skill** — read `implementation_skill` in the spec.
+   If set, invoke that skill before writing code. If null, check
+   `agents.implementation_skills.default` in `config.yaml`.
 
-5. **Write tests alongside the implementation.**
+5. **Use the spec as your definition of done.**
+   Each acceptance criterion should be verifiable in the implementation.
+   Use `/openspec-implement <slug>` to drive the full workflow.
+
+6. **Write tests alongside the implementation.**
    Every spec requires a `test_plan`. Tests must be written as part of the
    same PR — not as a follow-up. CI will fail if tests are missing or failing.
 
-6. **Commit the spec with the implementation:**
+7. **Commit the spec with the implementation:**
    Include the `.openspec/specs/<slug>.spec.yaml` file in the same commit
    (or PR) as the production code changes.
 
-7. **Update README.md** to reflect any new features, changed behavior, or
+8. **Update README.md** to reflect any new features, changed behavior, or
    new usage instructions introduced by the implementation.
 
 ---

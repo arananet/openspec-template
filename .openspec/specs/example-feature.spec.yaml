@@ -1,0 +1,53 @@
+# EXAMPLE SPEC — for reference only. This is not a real feature.
+# Copy this file, rename it to your-feature-slug.spec.yaml, and fill it in.
+# Delete or keep this file — it has no effect on CI.
+
+title: "User notification preferences"
+slug: "user-notification-preferences"
+type: feature
+status: review
+
+author: "your-github-handle"
+created_at: "2026-01-01"
+updated_at: "2026-01-01"
+
+description: |
+  Users currently receive all notifications with no way to opt out.
+  This feature adds a preferences page where users can toggle notification
+  types (email, push, in-app) independently, reducing unwanted noise and
+  improving retention.
+
+acceptance_criteria:
+  - "Given a logged-in user, when they visit /settings/notifications, then they see toggles for email, push, and in-app notifications"
+  - "Given a user disables email notifications, when a notification event fires, then no email is sent to that user"
+  - "Given a user saves preferences, when they return to the page, then their saved state is shown correctly"
+  - "Given an unauthenticated user, when they visit /settings/notifications, then they are redirected to /login"
+
+test_plan:
+  - "Unit: test NotificationPreferences model — save/load each toggle independently"
+  - "Unit: test notification dispatch — respects user preference flags before sending"
+  - "Integration: POST /api/preferences updates all three toggle values and returns 200"
+  - "Integration: GET /api/preferences returns saved values for authenticated user"
+  - "Integration: GET /api/preferences returns 401 for unauthenticated requests"
+
+qa_notes: |
+  Test on mobile viewport — toggles must be accessible on small screens.
+  Verify that disabling push does not affect email and vice versa.
+
+out_of_scope:
+  - "Notification frequency limits (e.g. digest mode) — separate spec"
+  - "Admin-level override of user preferences — separate spec"
+  - "Notification content customization"
+
+implementation_skill: "frontend-pro"
+  # This feature has a UI component — invoke frontend-pro during /openspec-implement
+
+technical_notes: |
+  Preferences stored in user_preferences table, keyed by user_id.
+  Notification dispatch checks preferences before sending — no changes to
+  the notification event system itself.
+
+linked_issues:
+  - "https://github.com/{{GITHUB_OWNER}}/{{PROJECT_NAME}}/issues/42"
+
+linked_prs: []

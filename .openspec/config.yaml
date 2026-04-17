@@ -56,6 +56,13 @@ agents:
     trigger: "pull_request"
     post_as: "pr-comment"
     goal_file: ".github/agents/spec-review.md"
+  implementation_skills:
+    frontend: "frontend-pro"
+    backend: "backend-pro"
+    data: "data-eng-pro"
+    devops: "devops-pro"
+    mobile: "mobile-pro"
+    default: null   # null = no domain skill, Claude handles implementation directly
 
 hooks:
   pre_commit:
