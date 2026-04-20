@@ -1,0 +1,61 @@
+# CodeQL — GitHub's native static-analysis engine.
+# Docs: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning
+#
+# Runs on every push to main, every PR, and weekly to catch newly-disclosed
+# query regressions even when the code isn't changing. Languages are
+# auto-detected via a small inline matrix — delete rows your repo doesn't use.
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Every Monday at 03:17 UTC — off-peak, avoids the top-of-hour stampede.
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Delete languages that don't apply. CodeQL-supported languages:
+        # cpp, csharp, go, java-kotlin, javascript-typescript, python, ruby, swift
+        language:
+          - javascript-typescript
+          - python
+          - go
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@662472033e021d55d94146f66f6058822b0b39fd # v3.27.0
+        with:
+          languages: ${{ matrix.language }}
+          queries: +security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@662472033e021d55d94146f66f6058822b0b39fd # v3.27.0
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@662472033e021d55d94146f66f6058822b0b39fd # v3.27.0
+        with:
+          category: "/language:${{ matrix.language }}"

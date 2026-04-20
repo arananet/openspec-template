@@ -1,0 +1,90 @@
+# Auto-label PRs based on which paths they touch.
+# Docs: https://github.com/actions/labeler
+# Consumed by .github/workflows/labeler.yml.
+
+spec:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.openspec/specs/**'
+          - '.openspec/templates/**'
+
+openspec-config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.openspec/config.yaml'
+          - '.openspec/defaults.yaml'
+          - '.openspec/onboarding.yaml'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**'
+          - '.github/dependabot.yml'
+          - '.github/labeler.yml'
+          - '.github/release-drafter.yml'
+
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'SECURITY.md'
+          - '.github/workflows/codeql.yml'
+          - '.github/workflows/secret-scan.yml'
+          - '.github/workflows/dependency-review.yml'
+          - '.github/workflows/sbom.yml'
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - 'docs/**'
+
+governance:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'CODE_OF_CONDUCT.md'
+          - 'CONTRIBUTING.md'
+          - 'SUPPORT.md'
+          - 'SECURITY.md'
+          - 'CHANGELOG.md'
+          - '.github/CODEOWNERS'
+          - '.github/FUNDING.yml'
+
+claude:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.claude/**'
+          - 'CLAUDE.md'
+          - '.github/AGENTS.md'
+          - '.github/copilot-instructions.md'
+
+hooks:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'hooks/**'
+          - '.claude/hooks/**'
+          - '.pre-commit-config.yaml'
+
+devcontainer:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.devcontainer/**'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'package.json'
+          - 'package-lock.json'
+          - 'pnpm-lock.yaml'
+          - 'yarn.lock'
+          - 'requirements*.txt'
+          - 'pyproject.toml'
+          - 'poetry.lock'
+          - 'uv.lock'
+          - 'go.mod'
+          - 'go.sum'
+          - 'Cargo.toml'
+          - 'Cargo.lock'
+          - 'Gemfile'
+          - 'Gemfile.lock'
+          - 'composer.json'
+          - 'composer.lock'

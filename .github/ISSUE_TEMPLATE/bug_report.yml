@@ -1,0 +1,97 @@
+name: Bug report
+description: Something isn't working as specified. File a reproducible bug.
+title: "[bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report!
+
+        Before submitting: please search [existing issues](../../issues?q=is%3Aissue)
+        to avoid duplicates, and check the [CHANGELOG](../../blob/main/CHANGELOG.md)
+        to see if the behaviour was changed intentionally.
+
+        **Security bugs must go through [SECURITY.md](../../blob/main/SECURITY.md)
+        — do not file them here.**
+
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      description: Release tag or commit SHA where you observed the bug.
+      placeholder: "v0.3.1 or abc123def"
+    validations:
+      required: true
+
+  - type: input
+    id: spec
+    attributes:
+      label: Related spec (if any)
+      description: Path to the OpenSpec spec file that describes the expected behaviour.
+      placeholder: ".openspec/specs/user-login.spec.yaml"
+    validations:
+      required: false
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the actual behaviour.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      description: Ideally, reference the acceptance criterion from the spec.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Minimal, self-contained steps to reproduce.
+      placeholder: |
+        1. Run `...`
+        2. Click `...`
+        3. Observe `...`
+      render: bash
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, runtime version, and any relevant tooling.
+      placeholder: |
+        - OS: macOS 14.5
+        - Node: 20.11.1
+        - Shell: zsh 5.9
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / stack trace
+      description: Paste any relevant logs. They'll be rendered as a code block.
+      render: shell
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I searched existing issues and this isn't a duplicate.
+          required: true
+        - label: I can reproduce the bug on the latest release.
+          required: true
+        - label: This is **not** a security vulnerability.
+          required: true

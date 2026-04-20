@@ -12,19 +12,27 @@ name: OpenSpec AI Review
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
-permissions:
-  contents: read
-  pull-requests: write
-  models: read          # required for GitHub Models / AI access
+permissions: read-all
+
+concurrency:
+  group: spec-ai-review-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ai-spec-review:
     name: AI Spec Alignment Review
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+      models: read          # required for GitHub Models / AI access
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
 

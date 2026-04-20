@@ -1,0 +1,189 @@
+# ─── Secrets & local config ────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.keystore
+*.jks
+secrets/
+.secrets/
+
+# ─── OS ────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*~
+.Spotlight-V100
+.Trashes
+
+# ─── Editors / IDEs ────────────────────────────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+.history/
+.nvim/
+.zed/
+
+# ─── Logs & temp ───────────────────────────────────────────────────────────
+*.log
+logs/
+*.tmp
+*.temp
+*.bak
+*.backup
+tmp/
+temp/
+
+# ─── Node.js / JavaScript / TypeScript ─────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+.yarn/cache
+.yarn/install-state.gz
+.npm
+.eslintcache
+.parcel-cache
+.next/
+.nuxt/
+.svelte-kit/
+.astro/
+.vite/
+.turbo/
+dist/
+build/
+out/
+coverage/
+*.tsbuildinfo
+.tscache/
+
+# ─── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+.hypothesis/
+
+# ─── Go ────────────────────────────────────────────────────────────────────
+/bin/
+/vendor/
+*.exe
+*.test
+*.out
+go.work
+go.work.sum
+
+# ─── Rust ──────────────────────────────────────────────────────────────────
+target/
+Cargo.lock.bak
+**/*.rs.bk
+
+# ─── Java / JVM ────────────────────────────────────────────────────────────
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.iml
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+target/
+hs_err_pid*
+
+# ─── .NET / C# ─────────────────────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+# ─── Swift / Xcode ─────────────────────────────────────────────────────────
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcworkspace/xcuserdata/
+Pods/
+
+# ─── Ruby ──────────────────────────────────────────────────────────────────
+*.gem
+*.rbc
+.bundle/
+vendor/bundle/
+.rspec_status
+
+# ─── PHP ───────────────────────────────────────────────────────────────────
+vendor/
+composer.phar
+
+# ─── Docker / Container ────────────────────────────────────────────────────
+.docker/
+docker-compose.override.yml
+
+# ─── Terraform / IaC ───────────────────────────────────────────────────────
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+crash.log
+crash.*.log
+.terraformrc
+terraform.rc
+
+# ─── Build / package artefacts ─────────────────────────────────────────────
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.7z
+*.rar
+
+# ─── Claude Code local / session state ─────────────────────────────────────
+.claude/settings.local.json
+.claude/cache/
+.claude/sessions/
+
+# ─── OpenSpec local state ──────────────────────────────────────────────────
+.openspec/.cache/
+.openspec/local.yaml

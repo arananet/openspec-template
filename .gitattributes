@@ -1,0 +1,89 @@
+# Default: treat all text files with LF line endings on checkout/checkin.
+# Keeps diffs consistent across macOS, Linux, and Windows contributors.
+* text=auto eol=lf
+
+# ─── Source code ───────────────────────────────────────────────────────────
+*.py      text eol=lf diff=python
+*.js      text eol=lf
+*.jsx     text eol=lf
+*.ts      text eol=lf
+*.tsx     text eol=lf
+*.go      text eol=lf diff=golang
+*.rs      text eol=lf diff=rust
+*.java    text eol=lf diff=java
+*.kt      text eol=lf
+*.rb      text eol=lf diff=ruby
+*.php     text eol=lf diff=php
+*.c       text eol=lf diff=cpp
+*.cpp     text eol=lf diff=cpp
+*.h       text eol=lf diff=cpp
+*.hpp     text eol=lf diff=cpp
+*.cs      text eol=lf diff=csharp
+*.swift   text eol=lf diff=swift
+*.scala   text eol=lf
+*.sh      text eol=lf
+*.bash    text eol=lf
+*.zsh     text eol=lf
+*.fish    text eol=lf
+
+# ─── Windows-only scripts keep CRLF ────────────────────────────────────────
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+*.ps1     text eol=crlf
+
+# ─── Data / config ─────────────────────────────────────────────────────────
+*.json    text eol=lf
+*.yaml    text eol=lf
+*.yml     text eol=lf
+*.toml    text eol=lf
+*.xml     text eol=lf
+*.md      text eol=lf
+*.csv     text eol=lf
+*.tsv     text eol=lf
+
+# ─── Binary ────────────────────────────────────────────────────────────────
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.webp    binary
+*.ico     binary
+*.pdf     binary
+*.zip     binary
+*.tar     binary
+*.tar.gz  binary
+*.tgz     binary
+*.7z      binary
+*.rar     binary
+*.mp3     binary
+*.mp4     binary
+*.mov     binary
+*.woff    binary
+*.woff2   binary
+*.ttf     binary
+*.otf     binary
+*.eot     binary
+*.pyc     binary
+*.jar     binary
+*.class   binary
+*.so      binary
+*.dll     binary
+*.exe     binary
+
+# ─── Linguist hints: mark vendored / generated paths so the repo language
+#     stats reflect what humans actually write.
+# Docs: https://github.com/github-linguist/linguist/blob/main/docs/overrides.md
+node_modules/** linguist-vendored
+vendor/**       linguist-vendored
+dist/**         linguist-generated
+build/**        linguist-generated
+*.lock          linguist-generated
+
+# ─── Export-ignore: keep these out of `git archive` tarballs ───────────────
+.github/        export-ignore
+.claude/        export-ignore
+.devcontainer/  export-ignore
+.editorconfig   export-ignore
+.gitattributes  export-ignore
+.gitignore      export-ignore
+hooks/          export-ignore

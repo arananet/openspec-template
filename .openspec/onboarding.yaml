@@ -64,6 +64,21 @@ questions:
     default: null
     maps_to: "agents.implementation_skills.default in config.yaml"
 
+  - id: project.security_contact
+    prompt: "Email address for private vulnerability reports? (used in SECURITY.md and CODE_OF_CONDUCT.md)"
+    required: true
+    type: string
+    default: "security@example.com"
+    maps_to: "replace {{SECURITY_CONTACT}} in SECURITY.md, CODE_OF_CONDUCT.md, SUPPORT.md, .github/ISSUE_TEMPLATE/config.yml"
+    placeholder: "{{SECURITY_CONTACT}}"
+
+  - id: project.default_branch
+    prompt: "Default branch name? (default: 'main')"
+    required: false
+    type: string
+    default: "main"
+    maps_to: "used in CHANGELOG.md link footers and branch protection docs"
+
   - id: testing.test_command
     prompt: "What command runs your test suite? (e.g. 'npm test', 'pytest', 'go test ./...')"
     required: true
@@ -89,12 +104,21 @@ after_completion:
     After collecting all answers:
     1. Write string values into .openspec/config.yaml by replacing the {{PLACEHOLDER}} tokens.
        For boolean answers: write `true` or `false` (unquoted) to the corresponding field.
-    2. If the user answered the `first_spec` question, run:
+    2. Replace {{PROJECT_NAME}} and {{GITHUB_OWNER}} across governance files:
+       README.md, SECURITY.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, SUPPORT.md,
+       CHANGELOG.md, .github/CODEOWNERS, .github/FUNDING.yml, and all files
+       under .github/ISSUE_TEMPLATE/.
+    3. Replace {{SECURITY_CONTACT}} with the answer from project.security_contact
+       in SECURITY.md, CODE_OF_CONDUCT.md, and SUPPORT.md.
+    4. Replace {{TEAM_NAME}} in .github/CODEOWNERS with a real GitHub team slug
+       (or fall back to the individual owner if no team exists yet).
+    5. If the user answered the `first_spec` question, run:
           gh openspec scaffold "<their answer>"
        and show them the created .openspec/specs/<slug>.spec.yaml file.
-    3. Tell the user:
+    6. Tell the user:
           "OpenSpec is configured. Run `bash setup.sh` to install git hooks.
-           After that, any commit touching source files will require a corresponding spec."
-    4. Offer to help them fill in the acceptance criteria and test_plan for their first spec.
-    5. Remind the user that every spec requires a `test_plan` and that CI will fail
+           After that, any commit touching source files will require a corresponding spec.
+           Configure branch protection using docs/BRANCH_PROTECTION.md as a guide."
+    7. Offer to help them fill in the acceptance criteria and test_plan for their first spec.
+    8. Remind the user that every spec requires a `test_plan` and that CI will fail
        if tests are missing or failing, following DevOps best practices.

@@ -1,0 +1,122 @@
+# Feature Spec — enterprise-hardening
+# Status must reach 'review' before any production code is written.
+
+title: "Harden the OpenSpec template with enterprise governance, security, and CI/CD best practices"
+slug: "enterprise-hardening"
+type: feature
+status: review
+
+author: "arananet"
+created_at: "2026-04-20"
+updated_at: "2026-04-20"
+
+description: |
+  The template currently nails spec-driven development but is missing the
+  governance, security, and DevOps scaffolding that enterprise teams expect
+  out of the box. Every new repo forked from this template has to re-add the
+  same standard files (SECURITY.md, CONTRIBUTING.md, CODEOWNERS, dependabot,
+  CodeQL, secret scanning, issue/PR templates, etc.) — that's exactly the
+  friction this template was built to eliminate.
+
+  This feature hardens the template along four axes:
+
+  1. Governance — ship the community-health files GitHub expects
+     (SECURITY.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, SUPPORT.md,
+     CHANGELOG.md, CODEOWNERS, FUNDING.yml) with {{PLACEHOLDER}} tokens
+     that slot into the existing onboarding flow.
+
+  2. Repo hygiene — ship language-agnostic .gitignore, .gitattributes,
+     and .editorconfig so cloned repos have sane defaults on day one.
+
+  3. Security & DevOps — add Dependabot, CodeQL, secret scanning (gitleaks),
+     dependency review, SBOM generation, and a pinned-action policy. Every
+     workflow uses SHA-pinned actions and minimum-privilege permissions.
+
+  4. Developer experience — add structured GitHub issue forms, a PR template
+     that links to the spec, a release-drafter / release-notes config, a
+     labeler, and a stale-bot. Update the test workflow to actually run
+     tests (today spec-check.yml validates specs but never executes the
+     configured test_command — a documented gap).
+
+  The work stays language-agnostic: all configs gracefully no-op when a
+  language isn't present, and everything project-specific is a placeholder
+  the existing onboarding can fill.
+
+acceptance_criteria:
+  - "Community health files exist at the repo root: SECURITY.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, SUPPORT.md, CHANGELOG.md — each uses {{PROJECT_NAME}} / {{GITHUB_OWNER}} / {{SECURITY_CONTACT}} placeholders that map cleanly to the onboarding flow"
+  - ".github/CODEOWNERS exists with a documented ownership matrix using {{GITHUB_OWNER}}/{{TEAM_NAME}} placeholders and explicit ownership for .openspec/, .github/, and .claude/ directories"
+  - ".github/FUNDING.yml exists with ko-fi (already referenced in README) and commented-out slots for github sponsors / open-collective"
+  - ".gitignore at the repo root covers Node, Python, Go, Rust, Java, .NET, macOS, Windows, Linux, JetBrains, VS Code, and common secret-file patterns (.env, *.pem, *.key)"
+  - ".gitattributes at the repo root normalises line endings (text=auto eol=lf), marks common binary extensions, and marks generated/vendored paths via linguist attributes"
+  - ".editorconfig at the repo root sets root=true, utf-8 charset, lf line endings, trim trailing whitespace, insert final newline, and per-language indent overrides for Python/Go/Makefile/Markdown/YAML"
+  - ".github/ISSUE_TEMPLATE/ contains structured GitHub Issue Forms (YAML): bug_report.yml, feature_request.yml, spec_question.yml, plus a config.yml that disables blank issues and routes security reports to SECURITY.md"
+  - ".github/pull_request_template.md exists and prompts the author to link the OpenSpec spec, list the acceptance criteria satisfied, list the test_plan items executed, and confirm docs/README updates"
+  - ".github/dependabot.yml updates GitHub Actions weekly and includes commented-out (documented) sections for npm / pip / gomod / cargo / docker so users only uncomment the ecosystems they use"
+  - "A CodeQL workflow (.github/workflows/codeql.yml) runs on push, pull_request, and a weekly schedule, uses SHA-pinned actions, has minimum-privilege permissions (security-events: write), and auto-detects languages"
+  - "A secret-scanning workflow (.github/workflows/secret-scan.yml) runs gitleaks on every PR with SHA-pinned action and fails the build on leak detection"
+  - "A dependency-review workflow (.github/workflows/dependency-review.yml) runs on pull_request, fails on high-severity vulnerabilities, and denies GPL/AGPL licenses by default (documented and tunable)"
+  - "An SBOM workflow (.github/workflows/sbom.yml) generates CycloneDX SBOMs on release and uploads them as release assets"
+  - "A release-drafter config (.github/release-drafter.yml) plus workflow auto-drafts release notes grouped by conventional-commit style categories (feat, fix, docs, chore, etc.)"
+  - "A labeler config (.github/labeler.yml) plus workflow auto-labels PRs based on changed paths (spec, ci, docs, .claude, .openspec)"
+  - "A stale workflow (.github/workflows/stale.yml) marks stale issues/PRs after 60 days of inactivity and closes after an additional 14 days, with documented exemption labels (pinned, security, openspec)"
+  - "spec-check.yml is extended with a new job that reads testing.test_command from .openspec/config.yaml and actually runs the tests when run_tests is true — closing the current gap where test enforcement is config-only"
+  - "Every .github/workflows/*.yml file pins actions to commit SHAs (with a version comment) and declares top-level permissions: read-all with per-job escalation as needed"
+  - "A .pre-commit-config.yaml exists at the repo root with pre-commit-hooks (trailing-whitespace, end-of-file-fixer, check-yaml, check-merge-conflict, detect-private-key) and gitleaks — all optional-but-recommended, documented in CONTRIBUTING.md"
+  - "docs/BRANCH_PROTECTION.md documents the recommended GitHub branch protection / ruleset configuration (required checks: OpenSpec PR Check, CodeQL, gitleaks, dependency-review; require signed commits; require linear history; 1 approving review)"
+  - "README.md is updated to reference the new governance files (SECURITY, CONTRIBUTING, CODE_OF_CONDUCT, SUPPORT, CHANGELOG) and the security/quality CI badges"
+  - "CLAUDE.md onboarding Step 6 is updated to mention creating/updating SECURITY.md contact info and CODEOWNERS entries alongside README.md"
+  - "onboarding.yaml adds two new questions (security_contact, default_branch) with sensible defaults (security@{{domain}}, main) that flow into the new governance files"
+
+test_plan:
+  - "Unit: run `ls` checks verifying presence of SECURITY.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, SUPPORT.md, CHANGELOG.md, CODEOWNERS, FUNDING.yml, .gitignore, .gitattributes, .editorconfig"
+  - "Unit: grep every new community-health file for {{PLACEHOLDER}} tokens and confirm they match tokens referenced in onboarding.yaml / defaults.yaml"
+  - "Unit: validate every .github/workflows/*.yml has `permissions:` declared at top level and uses `uses:` with a commit SHA (40-char hex) rather than a floating tag"
+  - "Unit: parse .github/ISSUE_TEMPLATE/*.yml as YAML and confirm each has name/description/body fields per GitHub Issue Forms schema; confirm config.yml has blank_issues_enabled: false"
+  - "Unit: parse .github/dependabot.yml as YAML and confirm version: 2 and a github-actions entry exists"
+  - "Unit: shellcheck / yamllint the new workflow files"
+  - "Integration: run spec-check.yml locally with act (or reason-through) on a branch that modifies a source file — confirm new test-execution step is invoked when run_tests: true and skipped when false"
+  - "Integration: open a PR on a fork to verify labeler assigns labels based on changed paths and release-drafter updates the draft"
+  - "Manual: verify GitHub renders SECURITY.md in the Security tab and shows the repo as community-standards-complete (green checkmarks on Insights → Community)"
+  - "Manual: stage only docs changes and open a PR — confirm spec-check still passes (no source changes, no spec needed) and the new checks (codeql, gitleaks, dep-review) run without false positives"
+  - "Manual: confirm `.editorconfig`, `.gitattributes`, `.gitignore` take effect in VS Code and a fresh devcontainer (line endings, ignored files, editor behaviour)"
+
+out_of_scope:
+  - "Language-specific test/lint/build workflows (covered by the user's chosen implementation skill, not the template)"
+  - "Container image signing (cosign) or attestation — scope creep; users can add it once they have a container"
+  - "Enterprise SSO / SAML / OIDC documentation — org-level concern outside the template's remit"
+  - "Pinning every transitive action inside third-party actions (we pin the top-level action only)"
+  - "Migration scripts for existing repos that were forked from an earlier version of this template"
+  - "Automatically filling new placeholders at repo-creation time — still relies on the onboarding interview"
+
+technical_notes: |
+  Keep the template language-agnostic. Every config that would need a specific
+  ecosystem (dependabot, pre-commit tool versions) should either no-op
+  gracefully or ship commented-out with clear toggle instructions.
+
+  Workflow hardening rules (apply uniformly):
+    - Pin actions to 40-char commit SHAs. Add a comment with the human tag.
+    - Declare `permissions: read-all` at the top and escalate per-job only.
+    - Prefer reusable workflows / composite actions when the same logic
+      appears in more than one place.
+    - Use `timeout-minutes` on every job.
+
+  Governance file conventions:
+    - SECURITY.md follows the GitHub private-vulnerability-reporting flow
+      and includes a {{SECURITY_CONTACT}} placeholder.
+    - CODE_OF_CONDUCT.md uses Contributor Covenant v2.1 verbatim.
+    - CONTRIBUTING.md leads with the OpenSpec workflow (spec → code → test)
+      rather than treating specs as an afterthought.
+    - CHANGELOG.md uses Keep-a-Changelog format + SemVer.
+
+  Branch-protection documentation is intentionally a Markdown doc rather
+  than a JSON/Terraform manifest — GitHub rulesets are org-policy sensitive
+  and the template should not assume a specific admin model.
+
+  implementation_skill: null
+  (No domain skill — this is repo-scaffolding/DevOps work that Claude
+  handles directly. The devops-pro skill is not registered in this
+  template's agents map yet.)
+
+linked_issues: []
+linked_prs: []
+implementation_skill: null

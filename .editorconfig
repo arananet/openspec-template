@@ -1,0 +1,33 @@
+# EditorConfig — https://editorconfig.org/
+# Ensures consistent formatting across IDEs / editors regardless of each
+# developer's personal settings.
+
+root = true
+
+[*]
+charset                  = utf-8
+end_of_line              = lf
+insert_final_newline     = true
+trim_trailing_whitespace = true
+indent_style             = space
+indent_size              = 2
+
+# ─── 4-space languages ────────────────────────────────────────────────────
+[*.{py,java,kt,cs,rs,c,cpp,h,hpp,php,swift}]
+indent_size = 4
+
+# ─── Tabs ─────────────────────────────────────────────────────────────────
+[*.go]
+indent_style = tab
+indent_size  = 4
+
+[Makefile]
+indent_style = tab
+
+# ─── Markdown — keep trailing whitespace (it's a line break) ──────────────
+[*.md]
+trim_trailing_whitespace = false
+
+# ─── Windows batch files ──────────────────────────────────────────────────
+[*.{bat,cmd,ps1}]
+end_of_line = crlf

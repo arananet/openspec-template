@@ -1,0 +1,80 @@
+# Release Drafter — keeps a draft release in sync with merged PRs.
+# Docs: https://github.com/release-drafter/release-drafter
+# Consumed by .github/workflows/release-drafter.yml.
+
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+
+categories:
+  - title: "Breaking changes"
+    labels: ["breaking", "major"]
+  - title: "Features"
+    labels: ["enhancement", "feature", "feat"]
+  - title: "Bug fixes"
+    labels: ["bug", "fix", "bugfix"]
+  - title: "Security"
+    labels: ["security"]
+  - title: "Performance"
+    labels: ["performance", "perf"]
+  - title: "Documentation"
+    labels: ["docs", "documentation"]
+  - title: "Spec changes"
+    labels: ["spec"]
+  - title: "CI / build"
+    labels: ["ci", "build", "github-actions"]
+  - title: "Dependencies"
+    collapse-after: 5
+    labels: ["dependencies"]
+  - title: "Other changes"
+
+change-template: "- $TITLE (#$NUMBER) @$AUTHOR"
+change-title-escapes: '\<*_&'
+
+version-resolver:
+  major:
+    labels: ["breaking", "major"]
+  minor:
+    labels: ["enhancement", "feature", "feat", "minor"]
+  patch:
+    labels: ["bug", "fix", "bugfix", "docs", "chore", "patch", "security"]
+  default: patch
+
+exclude-labels:
+  - "skip-changelog"
+  - "duplicate"
+  - "invalid"
+  - "wontfix"
+
+autolabeler:
+  - label: "bug"
+    title:
+      - '/^(fix|bugfix)(\(.+\))?:/i'
+  - label: "enhancement"
+    title:
+      - '/^feat(\(.+\))?:/i'
+  - label: "docs"
+    title:
+      - '/^docs(\(.+\))?:/i'
+  - label: "ci"
+    title:
+      - '/^ci(\(.+\))?:/i'
+      - '/^build(\(.+\))?:/i'
+  - label: "chore"
+    title:
+      - '/^chore(\(.+\))?:/i'
+  - label: "security"
+    title:
+      - '/^security(\(.+\))?:/i'
+  - label: "performance"
+    title:
+      - '/^perf(\(.+\))?:/i'
+  - label: "breaking"
+    title:
+      - '/!:/'
+
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION

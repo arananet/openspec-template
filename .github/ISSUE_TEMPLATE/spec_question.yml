@@ -1,0 +1,36 @@
+name: Spec question
+description: Question about an existing spec, the OpenSpec workflow, or CI gates.
+title: "[spec]: "
+labels: ["spec", "question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For general usage questions, please use
+        [Discussions](../../discussions) first.
+
+        Use this form when the question is specifically about a spec file,
+        the OpenSpec CI gates, the Claude Code skills, or the git hooks.
+
+  - type: input
+    id: spec
+    attributes:
+      label: Spec file (if applicable)
+      placeholder: ".openspec/specs/my-feature.spec.yaml"
+    validations:
+      required: false
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: What have you tried so far?
+      description: Logs, workflow output, or reasoning that helps a maintainer respond quickly.
+    validations:
+      required: false

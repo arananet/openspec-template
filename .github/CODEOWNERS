@@ -1,0 +1,41 @@
+# CODEOWNERS — Ownership matrix for automatic PR review requests.
+#
+# Syntax: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# The LAST matching pattern wins, so order matters: most-specific rules go last.
+#
+# Replace placeholders with real GitHub handles / team slugs before merging:
+#   {{GITHUB_OWNER}}  — org or user that owns the repo
+#   {{TEAM_NAME}}     — maintainer team slug (e.g. core-maintainers)
+
+# ── Default owners: every file not matched below
+*                               @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+
+# ── OpenSpec configuration and specs: governance-critical
+/.openspec/                     @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+/.openspec/config.yaml          @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+/.openspec/specs/               @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+
+# ── CI/CD, security workflows, and repo-wide GitHub config
+/.github/                       @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+/.github/workflows/             @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+/.github/CODEOWNERS             @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+/.github/dependabot.yml         @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+
+# ── Claude Code skills, hooks, and settings
+/.claude/                       @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+
+# ── Git hooks and repo bootstrap
+/hooks/                         @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+/setup.sh                       @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+
+# ── Governance documents
+/SECURITY.md                    @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+/CODE_OF_CONDUCT.md             @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+/CONTRIBUTING.md                @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+/LICENSE                        @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+
+# ── Agent / AI instructions — changes here affect every future contribution
+/CLAUDE.md                      @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+/.github/AGENTS.md              @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+/.github/copilot-instructions.md @{{GITHUB_OWNER}}/{{TEAM_NAME}}
+/.github/agents/                @{{GITHUB_OWNER}}/{{TEAM_NAME}}

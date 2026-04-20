@@ -8,13 +8,16 @@
 
 OpenSpec is a spec-driven development framework built into this repo. Every feature or bugfix starts with a spec file — no spec, no code. Specs define acceptance criteria, test plans, and the domain skill to use during implementation.
 
-**Two layers of enforcement:**
+**Layers of enforcement:**
 
 | Layer | When | What |
 |---|---|---|
 | Git hook (local) | `git commit` | Blocks commits with source changes but no spec |
-| CI — deterministic | Every PR | Validates spec fields, status, and test_plan presence |
+| Pre-commit framework (optional) | `git commit` | Runs gitleaks, yamllint, markdownlint, shellcheck |
+| CI — deterministic | Every PR | Validates spec fields, status, test_plan, and runs the test suite |
 | CI — agentic | Every PR | AI checks if the implementation actually satisfies the spec |
+| CI — security | Every PR | CodeQL SAST, gitleaks secret scan, dependency review |
+| CI — supply chain | Every release | CycloneDX SBOM generation |
 
 ---
 
@@ -109,10 +112,10 @@ Three project skills are available in any Claude Code session:
 
 ```
 .openspec/
-├── config.yaml          # Project configuration and enforcement settings
-├── defaults.yaml        # Personal/team defaults (fill in once)
-├── onboarding.yaml      # Questions Claude Code asks during first-time setup
-├── specs/               # Active spec files (one per feature/bugfix)
+├── config.yaml              # Project configuration and enforcement settings
+├── defaults.yaml            # Personal/team defaults (fill in once)
+├── onboarding.yaml          # Questions Claude Code asks during first-time setup
+├── specs/                   # Active spec files (one per feature/bugfix)
 │   └── example-feature.spec.yaml
 └── templates/
     ├── feature.spec.yaml
@@ -120,12 +123,31 @@ Three project skills are available in any Claude Code session:
 
 .github/
 ├── workflows/
-│   ├── spec-check.yml       # Deterministic CI gate
-│   └── spec-ai-review.yml   # Agentic semantic review
+│   ├── spec-check.yml           # Deterministic CI gate + test runner
+│   ├── spec-ai-review.yml       # Agentic semantic review
+│   ├── spec-bootstrap.yml       # First-push setup reminder
+│   ├── codeql.yml               # Static analysis (SAST)
+│   ├── secret-scan.yml          # Gitleaks secret scanning
+│   ├── dependency-review.yml    # Vulnerable / disallowed-license deps
+│   ├── sbom.yml                 # CycloneDX SBOM on release
+│   ├── labeler.yml              # Path-based PR labels
+│   ├── release-drafter.yml      # Auto-drafted release notes
+│   └── stale.yml                # Stale issue/PR bot
+├── ISSUE_TEMPLATE/
+│   ├── bug_report.yml
+│   ├── feature_request.yml
+│   ├── spec_question.yml
+│   └── config.yml
 ├── agents/
-│   └── spec-review.md       # AI agent goal file
-├── AGENTS.md                # Instructions for AI agents
-└── copilot-instructions.md  # GitHub Copilot instructions
+│   └── spec-review.md           # AI agent goal file
+├── CODEOWNERS                   # Ownership matrix
+├── FUNDING.yml                  # Sponsor links
+├── AGENTS.md                    # Instructions for AI agents
+├── copilot-instructions.md      # GitHub Copilot instructions
+├── dependabot.yml               # Weekly dependency updates
+├── labeler.yml                  # Rules for path-based labelling
+├── pull_request_template.md     # Structured PR template
+└── release-drafter.yml          # Release-notes grouping config
 
 .claude/
 ├── commands/
@@ -135,7 +157,34 @@ Three project skills are available in any Claude Code session:
 ├── hooks/
 │   └── require-spec-on-commit.sh
 └── settings.json
+
+docs/
+└── BRANCH_PROTECTION.md         # Recommended ruleset configuration
+
+Governance (repo root):
+├── SECURITY.md                  # Vulnerability disclosure policy
+├── CONTRIBUTING.md              # Contribution guide (spec-first)
+├── CODE_OF_CONDUCT.md           # Contributor Covenant v2.1
+├── SUPPORT.md                   # Support channels
+├── CHANGELOG.md                 # Keep-a-Changelog
+├── .gitignore                   # Multi-language defaults
+├── .gitattributes               # Line endings + linguist hints
+├── .editorconfig                # Editor formatting rules
+├── .pre-commit-config.yaml      # Optional pre-commit hooks
+└── .yamllint                    # YAML lint rules
 ```
+
+## Governance
+
+| File | Purpose |
+|---|---|
+| [SECURITY.md](SECURITY.md) | Report a vulnerability privately |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute — spec-first |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Contributor Covenant v2.1 |
+| [SUPPORT.md](SUPPORT.md) | Where to get help |
+| [CHANGELOG.md](CHANGELOG.md) | Release history |
+| [.github/CODEOWNERS](.github/CODEOWNERS) | Ownership matrix |
+| [docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md) | Recommended GitHub rulesets |
 
 ---
 

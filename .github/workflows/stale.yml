@@ -1,0 +1,55 @@
+# Mark and close stale issues and PRs.
+# Docs: https://github.com/actions/stale
+#
+# Exempt labels keep long-lived work alive without manual touch:
+#   - pinned:   explicitly kept open by a maintainer
+#   - security: tracked security work
+#   - openspec: spec-related discussion that may take longer to converge
+name: Stale
+
+on:
+  schedule:
+    - cron: "30 2 * * *" # daily at 02:30 UTC
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  stale:
+    name: Mark and close stale items
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Run stale bot
+        uses: actions/stale@28ca1036281a5e5922ead5184a1bbf96e5fc984e # v9.1.0
+        with:
+          days-before-stale: 60
+          days-before-close: 14
+          stale-issue-label: stale
+          stale-pr-label: stale
+          exempt-issue-labels: "pinned,security,openspec,help-wanted"
+          exempt-pr-labels: "pinned,security,openspec,dependencies"
+          exempt-draft-pr: true
+          stale-issue-message: |
+            This issue has been inactive for 60 days. It will be closed in 14
+            days unless it receives new activity.
+
+            If this is still relevant, please leave a comment, link the
+            related spec (`.openspec/specs/<slug>.spec.yaml`), or add the
+            `pinned` label to keep it open.
+          stale-pr-message: |
+            This pull request has been inactive for 60 days. It will be
+            closed in 14 days unless it receives new activity.
+
+            Rebase onto `main`, address open review comments, or add the
+            `pinned` label if the work is still in progress.
+          close-issue-message: |
+            Closing due to inactivity. Reopen anytime if this is still
+            relevant — no judgment, things fall off the radar.
+          close-pr-message: |
+            Closing due to inactivity. The branch is still available — feel
+            free to reopen and rebase when you're ready.

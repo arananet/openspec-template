@@ -1,18 +1,41 @@
 name: OpenSpec PR Check
 
+# Deterministic spec-coverage gate. Complements the agentic spec-ai-review.yml.
+#
+# This workflow:
+#   1. Ensures OpenSpec is initialised and fully configured.
+#   2. Validates spec coverage for changed files.
+#   3. Validates required fields in every spec.
+#   4. Runs the project's test command (when ci.run_tests is true).
+
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+  group: spec-check-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   spec-check:
     name: Validate Spec Coverage
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+
+    outputs:
+      has_source_changes: ${{ steps.coverage.outputs.has_source_changes }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          fetch-depth: 0   # required for git diff against base branch
+          fetch-depth: 0 # required for git diff against base branch
 
       - name: Check OpenSpec is initialized
         run: |
@@ -32,12 +55,19 @@ jobs:
           echo "✓ config.yaml is fully configured"
 
       - name: Check spec coverage for changed files
+        id: coverage
         run: |
           BASE="${{ github.base_ref }}"
           CHANGED=$(git diff --name-only "origin/${BASE}...HEAD")
 
           SOURCE=$(echo "$CHANGED" | grep -E '\.(py|ts|js|tsx|jsx|go|java|rb|rs|cpp|c|cs|swift|kt|php)$' || true)
           SPECS=$(echo "$CHANGED"  | grep -E '\.openspec/specs/.*\.spec\.yaml$' || true)
+
+          if [ -n "$SOURCE" ]; then
+            echo "has_source_changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_source_changes=false" >> "$GITHUB_OUTPUT"
+          fi
 
           if [ -n "$SOURCE" ] && [ -z "$SPECS" ]; then
             echo "::error::This PR modifies source files but includes no spec changes."
@@ -82,3 +112,59 @@ jobs:
           done < <(find .openspec/specs -name "*.spec.yaml" ! -name ".gitkeep" -print0 2>/dev/null)
 
           exit $FAIL
+
+  # ── Separate job so the test command runs in a clean environment and can
+  #    be required independently in branch protection.
+  run-tests:
+    name: Run Tests
+    needs: spec-check
+    if: needs.spec-check.outputs.has_source_changes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Read CI config from .openspec/config.yaml
+        id: cfg
+        run: |
+          run_tests=$(grep -E '^\s*run_tests:' .openspec/config.yaml | head -1 | awk '{print $2}' | tr -d '"')
+          test_cmd=$(grep -E '^\s*test_command:' .openspec/config.yaml | head -1 | sed -E 's/^\s*test_command:\s*//' | sed -E 's/^"(.*)"$/\1/')
+          fail_on_missing=$(grep -E '^\s*fail_on_missing_tests:' .openspec/config.yaml | head -1 | awk '{print $2}' | tr -d '"')
+
+          echo "run_tests=${run_tests}"            >> "$GITHUB_OUTPUT"
+          echo "test_cmd=${test_cmd}"              >> "$GITHUB_OUTPUT"
+          echo "fail_on_missing=${fail_on_missing}" >> "$GITHUB_OUTPUT"
+
+          echo "run_tests=${run_tests}"
+          echo "test_cmd=${test_cmd}"
+          echo "fail_on_missing=${fail_on_missing}"
+
+      - name: Skip if run_tests is disabled
+        if: steps.cfg.outputs.run_tests != 'true'
+        run: |
+          echo "::notice::ci.run_tests is false in .openspec/config.yaml — skipping."
+          exit 0
+
+      - name: Validate test_command is configured
+        if: steps.cfg.outputs.run_tests == 'true'
+        run: |
+          CMD="${{ steps.cfg.outputs.test_cmd }}"
+          if [ -z "$CMD" ] || [[ "$CMD" == *"{{"* ]]; then
+            echo "::error::testing.test_command is empty or still a placeholder in .openspec/config.yaml"
+            echo "Set it during onboarding or edit the file directly."
+            exit 1
+          fi
+          echo "✓ test_command: $CMD"
+
+      - name: Run tests
+        if: steps.cfg.outputs.run_tests == 'true'
+        env:
+          TEST_COMMAND: ${{ steps.cfg.outputs.test_cmd }}
+        run: |
+          set -euo pipefail
+          echo "→ $TEST_COMMAND"
+          bash -c "$TEST_COMMAND"

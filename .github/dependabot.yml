@@ -1,0 +1,92 @@
+# Dependabot — automated dependency updates.
+# Docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# This template ships GitHub Actions updates enabled (the only ecosystem we
+# can assume exists). Uncomment entries below that match your project's
+# package managers.
+version: 2
+
+updates:
+  # ── GitHub Actions (always enabled — every repo has workflows) ──────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: UTC
+    open-pull-requests-limit: 10
+    groups:
+      actions:
+        patterns:
+          - "*"
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+
+  # ── npm / pnpm / yarn (uncomment if you ship Node.js code) ──────────────
+  # - package-ecosystem: npm
+  #   directory: /
+  #   schedule:
+  #     interval: weekly
+  #   open-pull-requests-limit: 10
+  #   groups:
+  #     dev-dependencies:
+  #       dependency-type: development
+  #     production-dependencies:
+  #       dependency-type: production
+  #       update-types: [minor, patch]
+  #   labels: [dependencies, javascript]
+  #   commit-message:
+  #     prefix: "chore(deps)"
+  #     prefix-development: "chore(deps-dev)"
+
+  # ── pip / Poetry / uv (uncomment if you ship Python code) ───────────────
+  # - package-ecosystem: pip
+  #   directory: /
+  #   schedule:
+  #     interval: weekly
+  #   labels: [dependencies, python]
+  #   commit-message:
+  #     prefix: "chore(deps)"
+
+  # ── Go modules ──────────────────────────────────────────────────────────
+  # - package-ecosystem: gomod
+  #   directory: /
+  #   schedule:
+  #     interval: weekly
+  #   labels: [dependencies, go]
+  #   commit-message:
+  #     prefix: "chore(deps)"
+
+  # ── Rust / Cargo ────────────────────────────────────────────────────────
+  # - package-ecosystem: cargo
+  #   directory: /
+  #   schedule:
+  #     interval: weekly
+  #   labels: [dependencies, rust]
+  #   commit-message:
+  #     prefix: "chore(deps)"
+
+  # ── Docker base images ──────────────────────────────────────────────────
+  # - package-ecosystem: docker
+  #   directory: /
+  #   schedule:
+  #     interval: weekly
+  #   labels: [dependencies, docker]
+  #   commit-message:
+  #     prefix: "chore(deps)"
+
+  # ── Devcontainer features ───────────────────────────────────────────────
+  - package-ecosystem: devcontainers
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - devcontainers
+    commit-message:
+      prefix: "chore(deps)"

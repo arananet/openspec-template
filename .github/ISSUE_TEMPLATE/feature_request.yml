@@ -1,0 +1,79 @@
+name: Feature request
+description: Propose a new feature. A maintainer will help convert it to a spec.
+title: "[feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This project uses [OpenSpec](../../blob/main/.openspec/) — every feature
+        begins as a spec file before code is written. Use this form to describe
+        the idea; a maintainer will work with you to turn it into a spec if it's
+        accepted.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the user-facing problem, not the solution.
+      placeholder: |
+        Today, users have to... which is slow / confusing / error-prone because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: High-level idea. Don't worry about implementation detail yet.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Draft acceptance criteria
+      description: |
+        Bulleted list of what "done" would look like. These will feed directly
+        into the spec's `acceptance_criteria` field.
+      placeholder: |
+        - Users can ...
+        - When X happens, the system ...
+        - Unauthorised users cannot ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you've thought about and why they're worse.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Suggested implementation domain
+      description: Which domain skill is most relevant? Maps to `implementation_skill` in the spec.
+      options:
+        - unsure
+        - frontend
+        - backend
+        - data
+        - devops
+        - mobile
+        - other
+      default: 0
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I searched existing issues and this isn't a duplicate.
+          required: true
+        - label: I understand this will be converted to a spec before any code is written.
+          required: true

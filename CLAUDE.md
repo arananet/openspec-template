@@ -45,12 +45,33 @@ If output is `0`, configuration is complete. Tell the user:
 > "OpenSpec is configured. Run `bash setup.sh` to install git hooks.
 >  After that, any commit touching source files will require a spec."
 
-**Step 6 — Create or update README.md:**
-After configuration is complete, create or update `README.md` with:
-- Project name and description (from `config.yaml`)
-- How to install/run the project
-- How OpenSpec works in this repo (brief overview)
-- Link to `.openspec/` for spec details
+**Step 6 — Create or update README.md and substitute placeholders in governance files:**
+
+After configuration is complete:
+
+1. Create or update `README.md` with:
+   - Project name and description (from `config.yaml`)
+   - How to install/run the project
+   - How OpenSpec works in this repo (brief overview)
+   - Link to `.openspec/` for spec details
+
+2. Substitute placeholders across the governance files shipped with this
+   template. A single find-and-replace per token covers every file:
+
+   | Token | Replace with | Files |
+   |---|---|---|
+   | `{{PROJECT_NAME}}` | Project name | README, SECURITY, CONTRIBUTING, SUPPORT, CHANGELOG, devcontainer |
+   | `{{GITHUB_OWNER}}` | GitHub org/user | CONTRIBUTING, CHANGELOG, CODEOWNERS, ISSUE_TEMPLATE/config.yml |
+   | `{{TEAM_NAME}}` | GitHub team slug | CODEOWNERS |
+   | `{{SECURITY_CONTACT}}` | Security contact email | SECURITY, CODE_OF_CONDUCT, SUPPORT |
+   | `{{PROJECT_DESCRIPTION}}` | One-line description | README |
+
+3. Review `.github/CODEOWNERS` — add finer-grained per-path owners as the
+   codebase grows. Default ownership is the team from `{{TEAM_NAME}}`.
+
+4. Point the user to `docs/BRANCH_PROTECTION.md` to configure required
+   status checks (OpenSpec PR Check, CodeQL, gitleaks, dependency-review)
+   on the default branch.
 
 Do not write any production code until the config has no `{{` tokens.
 

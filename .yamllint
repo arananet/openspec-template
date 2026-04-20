@@ -1,0 +1,28 @@
+# yamllint — https://yamllint.readthedocs.io/
+# Pragmatic defaults so the repo's YAML stays consistent without fighting
+# GitHub Actions' verbose syntax.
+extends: default
+
+rules:
+  line-length:
+    max: 200
+    level: warning
+  document-start: disable
+  truthy:
+    allowed-values: ["true", "false", "on", "off"]
+    check-keys: false
+  comments:
+    min-spaces-from-content: 1
+  comments-indentation: disable
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
+  braces:
+    max-spaces-inside: 1
+
+ignore: |
+  node_modules/
+  vendor/
+  dist/
+  build/
+  .venv/

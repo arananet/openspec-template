@@ -1,0 +1,39 @@
+# Dependency Review — fails a PR that introduces known-vulnerable or
+# disallowed-license dependencies.
+# Docs: https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-dependency-review
+#
+# Requires the repo to have GitHub's Dependency Graph enabled (on by default
+# for public repos; private repos must enable GHAS or Dependabot).
+name: Dependency Review
+
+on:
+  pull_request:
+
+permissions: read-all
+
+concurrency:
+  group: dep-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dependency-review:
+    name: Review new dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write # for the inline PR summary comment
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@4081bf99e2866ebe428fc0477b69eb4fcda7220a # v4.5.0
+        with:
+          # Block anything moderate or worse. Tune to 'low' for strict repos.
+          fail-on-severity: high
+          # Copyleft licenses are blocked by default. Users should tailor this
+          # to their organisation's legal policy.
+          deny-licenses: GPL-2.0, GPL-3.0, AGPL-3.0
+          comment-summary-in-pr: on-failure
