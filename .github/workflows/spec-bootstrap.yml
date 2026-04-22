@@ -2,9 +2,9 @@ name: OpenSpec Bootstrap
 
 on:
   push:
-    branches: [main]
-  # Also fires when a repo is created from this template and any
-  # branch is created — covers the GitHub UI "Use this template" flow.
+    branches: [main, master]
+  # Fires when a repo is created from this template (covers "Use this template" flow).
+  # repo-init.yml handles creating `main` if needed; this workflow creates the setup issue.
   create:
   workflow_dispatch:
 

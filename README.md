@@ -128,6 +128,7 @@ Three project skills are available in any Claude Code session:
 │   ├── spec-check.yml           # Deterministic CI gate + test runner
 │   ├── spec-ai-review.yml       # Agentic semantic review
 │   ├── spec-bootstrap.yml       # First-push setup reminder
+│   ├── repo-init.yml            # Creates `main` branch on new repos from template
 │   ├── codeql.yml               # Static analysis (SAST)
 │   ├── secret-scan.yml          # Gitleaks secret scanning
 │   ├── dependency-review.yml    # Vulnerable / disallowed-license deps

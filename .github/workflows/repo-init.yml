@@ -1,0 +1,112 @@
+name: Initialize Repository
+
+# Runs once when a new repo is created from this template.
+# Creates the `main` branch if it doesn't exist and sets it as the default.
+# This is a no-op if the default branch is already `main`.
+
+on:
+  create:
+  workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+  group: repo-init
+  cancel-in-progress: false
+
+jobs:
+  init-main-branch:
+    name: Initialize main branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Only run on default branch (not on tag/branch creation events from regular work)
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'create' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check if main branch already exists
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DEFAULT="${{ github.event.repository.default_branch }}"
+          echo "default_branch=${DEFAULT}" >> "$GITHUB_OUTPUT"
+
+          if [ "$DEFAULT" = "main" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "✓ Default branch is already 'main' — nothing to do."
+            exit 0
+          fi
+
+          # Check if main branch exists
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/branches/main")
+
+          if [ "$STATUS" = "200" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "'main' branch already exists — nothing to do."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "Default branch is '${DEFAULT}' — will create 'main' and set as default."
+          fi
+
+      - name: Checkout
+        if: steps.check.outputs.skip == 'false'
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Create main branch from default
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          git checkout -b main
+          git push origin main
+          echo "✓ Created 'main' branch from '${{ steps.check.outputs.default_branch }}'."
+
+      - name: Set main as default branch
+        if: steps.check.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -s -X PATCH \
+            -H "Authorization: token $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}" \
+            -d '{"default_branch": "main"}'
+
+          echo "✓ Default branch set to 'main'."
+
+      - name: Clean up template branch
+        if: steps.check.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OLD_BRANCH: ${{ steps.check.outputs.default_branch }}
+        run: |
+          # Only delete the old default branch if it looks like a template artifact
+          # (not a standard branch name someone might want to keep)
+          case "$OLD_BRANCH" in
+            main|master|develop|dev|staging|production|release)
+              echo "Old default branch '$OLD_BRANCH' is a common branch name — keeping it."
+              ;;
+            *)
+              echo "Deleting old template branch '$OLD_BRANCH'..."
+              curl -s -X DELETE \
+                -H "Authorization: token $GH_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/${{ github.repository }}/git/refs/heads/${OLD_BRANCH}"
+              echo "✓ Deleted '$OLD_BRANCH'."
+              ;;
+          esac
+
+      - name: Summary
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          echo "## Repository Initialized" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Created \`main\` branch from \`${{ steps.check.outputs.default_branch }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Set \`main\` as the default branch" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Next:** Complete OpenSpec setup by opening this repo in Claude Code or editing \`.openspec/config.yaml\` manually." >> "$GITHUB_STEP_SUMMARY"
