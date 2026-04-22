@@ -17,6 +17,7 @@ project:
   team: "{{TEAM_NAME}}"
   domain: "{{PROJECT_DOMAIN}}"
   description: "{{PROJECT_DESCRIPTION}}"
+  tech_stack: "{{TECH_STACK}}"   # comma-separated, e.g. "python, fastapi, docker"
 
 spec:
   required_fields:

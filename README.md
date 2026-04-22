@@ -1,5 +1,7 @@
 # {{PROJECT_NAME}}
 
+{{BADGES}}
+
 {{PROJECT_DESCRIPTION}}
 
 ---
@@ -197,6 +199,21 @@ Required fields: `title`, `description`, `acceptance_criteria`, `test_plan`, `st
 Status lifecycle: `draft` → `review` → `approved`
 
 > Code can only be written when status is `review` or `approved`.
+
+---
+
+## Coding Guidelines
+
+This project follows the [Karpathy-Inspired Coding Guidelines](https://github.com/forrestchang/andrej-karpathy-skills) — four principles derived from [Andrej Karpathy's observations](https://x.com/karpathy/status/2015883857489522876) on common LLM coding pitfalls:
+
+| Principle | What it addresses |
+|---|---|
+| **Think Before Coding** | Wrong assumptions, hidden confusion, missing tradeoffs |
+| **Simplicity First** | Overcomplication, bloated abstractions |
+| **Surgical Changes** | Orthogonal edits, touching code you shouldn't |
+| **Goal-Driven Execution** | Leverage through tests-first, verifiable success criteria |
+
+These guidelines are integrated into [`CLAUDE.md`](CLAUDE.md) and work alongside OpenSpec — Principle 4 (Goal-Driven Execution) is structurally enforced through spec `acceptance_criteria` and `test_plan` fields.
 
 ---
 

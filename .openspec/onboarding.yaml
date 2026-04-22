@@ -36,6 +36,18 @@ questions:
     maps_to: "project.description in config.yaml"
     placeholder: "{{PROJECT_DESCRIPTION}}"
 
+  - id: project.tech_stack
+    prompt: "What languages, frameworks, or tools does this project use? (comma-separated, e.g. 'python, fastapi, docker' or 'typescript, react, nextjs')"
+    required: false
+    type: string
+    default: ""
+    maps_to: "project.tech_stack in config.yaml — also used to generate shields.io badges in README.md"
+    placeholder: "{{TECH_STACK}}"
+    hint: |
+      Common values: python, javascript, typescript, go, rust, java, csharp, ruby, php, swift, kotlin,
+      react, vue, angular, nextjs, express, django, flask, fastapi, spring, dotnet, rails, laravel,
+      docker, kubernetes, terraform, azure, aws, gcp, github-actions, postgres, mongodb, redis
+
   - id: spec.enforce_on_pr
     prompt: "Block PRs that have no spec file changes? (yes/no, default: yes)"
     required: false

@@ -65,11 +65,78 @@ After configuration is complete:
    | `{{TEAM_NAME}}` | GitHub team slug | CODEOWNERS |
    | `{{SECURITY_CONTACT}}` | Security contact email | SECURITY, CODE_OF_CONDUCT, SUPPORT |
    | `{{PROJECT_DESCRIPTION}}` | One-line description | README |
+   | `{{BADGES}}` | shields.io badge line (auto-generated from `tech_stack`) | README |
+   | `{{TECH_STACK}}` | Comma-separated tech list | config.yaml |
 
-3. Review `.github/CODEOWNERS` — add finer-grained per-path owners as the
+3. **Generate badges from `tech_stack`:**
+
+   Read `project.tech_stack` from `config.yaml`. For each comma-separated
+   value, look up the matching badge from the catalog below and concatenate
+   them into a single line separated by spaces. Replace `{{BADGES}}` in
+   `README.md` with the result. If `tech_stack` is empty, remove the
+   `{{BADGES}}` line entirely.
+
+   Always append the OpenSpec and License badges at the end:
+   ```
+   ![OpenSpec](https://img.shields.io/badge/OpenSpec-enforced-blueviolet)
+   ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+   ```
+
+   **Badge catalog** (case-insensitive match on `tech_stack` values):
+
+   | Value | Badge markdown |
+   |---|---|
+   | `python` | `![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)` |
+   | `javascript` | `![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)` |
+   | `typescript` | `![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)` |
+   | `go` | `![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white)` |
+   | `rust` | `![Rust](https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white)` |
+   | `java` | `![Java](https://img.shields.io/badge/Java-ED8B00?logo=openjdk&logoColor=white)` |
+   | `csharp` | `![C#](https://img.shields.io/badge/C%23-239120?logo=csharp&logoColor=white)` |
+   | `ruby` | `![Ruby](https://img.shields.io/badge/Ruby-CC342D?logo=ruby&logoColor=white)` |
+   | `php` | `![PHP](https://img.shields.io/badge/PHP-777BB4?logo=php&logoColor=white)` |
+   | `swift` | `![Swift](https://img.shields.io/badge/Swift-FA7343?logo=swift&logoColor=white)` |
+   | `kotlin` | `![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white)` |
+   | `react` | `![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)` |
+   | `vue` | `![Vue.js](https://img.shields.io/badge/Vue.js-4FC08D?logo=vuedotjs&logoColor=white)` |
+   | `angular` | `![Angular](https://img.shields.io/badge/Angular-DD0031?logo=angular&logoColor=white)` |
+   | `nextjs` | `![Next.js](https://img.shields.io/badge/Next.js-000000?logo=nextdotjs&logoColor=white)` |
+   | `express` | `![Express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)` |
+   | `django` | `![Django](https://img.shields.io/badge/Django-092E20?logo=django&logoColor=white)` |
+   | `flask` | `![Flask](https://img.shields.io/badge/Flask-000000?logo=flask&logoColor=white)` |
+   | `fastapi` | `![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)` |
+   | `spring` | `![Spring](https://img.shields.io/badge/Spring-6DB33F?logo=spring&logoColor=white)` |
+   | `dotnet` | `![.NET](https://img.shields.io/badge/.NET-512BD4?logo=dotnet&logoColor=white)` |
+   | `rails` | `![Rails](https://img.shields.io/badge/Rails-CC0000?logo=rubyonrails&logoColor=white)` |
+   | `laravel` | `![Laravel](https://img.shields.io/badge/Laravel-FF2D20?logo=laravel&logoColor=white)` |
+   | `docker` | `![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)` |
+   | `kubernetes` | `![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white)` |
+   | `terraform` | `![Terraform](https://img.shields.io/badge/Terraform-7B42BC?logo=terraform&logoColor=white)` |
+   | `azure` | `![Azure](https://img.shields.io/badge/Azure-0078D4?logo=microsoftazure&logoColor=white)` |
+   | `aws` | `![AWS](https://img.shields.io/badge/AWS-232F3E?logo=amazonwebservices&logoColor=white)` |
+   | `gcp` | `![GCP](https://img.shields.io/badge/GCP-4285F4?logo=googlecloud&logoColor=white)` |
+   | `github-actions` | `![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?logo=githubactions&logoColor=white)` |
+   | `postgres` | `![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)` |
+   | `mongodb` | `![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white)` |
+   | `redis` | `![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)` |
+   | `nodejs` | `![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white)` |
+   | `svelte` | `![Svelte](https://img.shields.io/badge/Svelte-FF3E00?logo=svelte&logoColor=white)` |
+   | `tailwind` | `![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white)` |
+   | `graphql` | `![GraphQL](https://img.shields.io/badge/GraphQL-E10098?logo=graphql&logoColor=white)` |
+   | `mysql` | `![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)` |
+   | `sqlite` | `![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white)` |
+   | `firebase` | `![Firebase](https://img.shields.io/badge/Firebase-FFCA28?logo=firebase&logoColor=black)` |
+   | `supabase` | `![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)` |
+
+   If a `tech_stack` value has no catalog match, generate a generic gray badge:
+   ```
+   ![<Value>](https://img.shields.io/badge/<Value>-gray)
+   ```
+
+4. Review `.github/CODEOWNERS` — add finer-grained per-path owners as the
    codebase grows. Default ownership is the team from `{{TEAM_NAME}}`.
 
-4. Point the user to `docs/BRANCH_PROTECTION.md` to configure required
+5. Point the user to `docs/BRANCH_PROTECTION.md` to configure required
    status checks (OpenSpec PR Check, CodeQL, gitleaks, dependency-review)
    on the default branch.
 

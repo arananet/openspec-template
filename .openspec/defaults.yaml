@@ -10,6 +10,7 @@
 owner: ""             # GitHub org or user, e.g. "acme-corp"
 team: ""              # Team name, e.g. "platform", "growth", "data-eng"
 domain: "engineering" # Product domain, e.g. "payments", "auth", "reporting"
+tech_stack: ""        # Comma-separated, e.g. "python, fastapi, docker"
 test_command: ""      # e.g. "npm test", "pytest", "go test ./..."
 
 enforce_on_commit: true   # Block commits when no spec exists for source changes
