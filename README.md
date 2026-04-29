@@ -120,8 +120,15 @@ Three project skills are available in any Claude Code session:
 ├── specs/                   # Active spec files (one per feature/bugfix)
 │   └── example-feature.spec.yaml
 └── templates/
-    ├── feature.spec.yaml
+    ├── feature.spec.yaml    # Includes optional eval_plan for AI-backed features
     └── bugfix.spec.yaml
+
+.harness/                    # Eval harness — proves specs under controlled conditions
+├── scenarios/               # Declarative eval scenarios (agent tasks, prompt runs)
+│   └── example.scenario.yaml
+├── evaluators/              # Rubrics and scripts that score scenario runs
+├── mocks/                   # Mock tools, APIs, and data sources
+└── traces/                  # Captured execution traces (gitignored by default)
 
 .github/
 ├── workflows/
@@ -162,6 +169,8 @@ Three project skills are available in any Claude Code session:
 └── settings.json
 
 docs/
+├── adr/                         # Architecture Decision Records
+│   └── 0001-record-architecture-decisions.md
 └── BRANCH_PROTECTION.md         # Recommended ruleset configuration
 
 Governance (repo root):
@@ -200,6 +209,42 @@ Required fields: `title`, `description`, `acceptance_criteria`, `test_plan`, `st
 Status lifecycle: `draft` → `review` → `approved`
 
 > Code can only be written when status is `review` or `approved`.
+
+---
+
+## OpenSpec vs Harness
+
+OpenSpec defines **what should be true.**
+Tests and harnesses prove **whether it is true.**
+
+For normal software, this means unit, integration, and end-to-end tests — captured in each spec's `test_plan`.
+
+For AI systems, verification often requires more:
+
+| Concern | Tool |
+|---|---|
+| Functional correctness | Unit / integration tests (`test_plan`) |
+| Agent task success | Eval scenarios (`.harness/scenarios/`) |
+| Grounding and citation accuracy | Evaluators (`.harness/evaluators/`) |
+| Tool use correctness | Mocked tool runs (`.harness/mocks/`) |
+| Latency and cost budgets | Scenario `thresholds` + `metrics` |
+| Safety and refusal behavior | Scenario `expected` + evaluator rubrics |
+| Reproducible regression baselines | Captured traces (`.harness/traces/`) |
+
+When a spec involves an AI-backed component, add an `eval_plan` block — it links the spec to the harness scenarios that prove it:
+
+```yaml
+eval_plan:
+  scenarios:
+    - ".harness/scenarios/my-agent-task.scenario.yaml"
+  metrics:
+    - task_success
+    - groundedness
+    - tool_accuracy
+    - refusal_accuracy
+```
+
+The spec says *what* must be validated. The harness says *how* that validation is executed.
 
 ---
 

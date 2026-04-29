@@ -1,0 +1,33 @@
+id: example-agent-task
+type: agent_eval
+
+description: |
+  Verify that the agent summarizes a document, cites its sources,
+  and does not fabricate facts not present in the input.
+
+input:
+  prompt: "Summarize this document and cite your sources."
+  document: ".harness/mocks/sample-document.txt"
+
+expected:
+  must_cite_sources: true
+  must_not_hallucinate: true
+  max_tool_calls: 5
+
+metrics:
+  - task_success       # Did the agent complete the task?
+  - citation_accuracy  # Are cited sources actually in the input?
+  - groundedness       # Is every claim traceable to the input?
+  - latency_ms         # Wall-clock time for the full run
+  - cost_estimate      # Estimated token cost in USD
+
+thresholds:
+  task_success: 1.0       # Must always succeed
+  citation_accuracy: 0.95 # Allow 5% miss rate on citation matching
+  groundedness: 0.90
+  latency_ms: 5000        # Fail if slower than 5 s
+  cost_estimate: 0.05     # Fail if estimated cost exceeds $0.05 per run
+
+evaluator: evaluators/citation-and-groundedness.md
+
+linked_spec: ".openspec/specs/example-feature.spec.yaml"

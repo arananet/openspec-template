@@ -35,6 +35,19 @@ implementation_skill: null
   # Overrides agents.implementation_skills.default in config.yaml.
   # Examples: "frontend-pro", "backend-pro", "data-eng-pro", "devops-pro", "mobile-pro"
 
+eval_plan:
+  # Optional. Use for features that involve an AI model, agent, or LLM-backed component.
+  # Leave the block empty (or remove it) for fully deterministic features — test_plan is enough.
+  scenarios: []
+    # - ".harness/scenarios/example.scenario.yaml"
+  metrics: []
+    # - task_success        # Did the agent complete the task?
+    # - groundedness        # Are all claims traceable to the input?
+    # - tool_accuracy       # Did the agent use the right tools correctly?
+    # - refusal_accuracy    # Did the agent refuse when it should have?
+    # - latency_ms          # Wall-clock time budget
+    # - cost_estimate       # Token cost budget in USD
+
 technical_notes: |
   <!-- Optional: constraints, dependencies, architecture decisions.
        Do not design the solution here — save implementation details for the PR. -->
