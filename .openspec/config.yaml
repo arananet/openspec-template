@@ -57,6 +57,48 @@ agents:
     trigger: "pull_request"
     post_as: "pr-comment"
     goal_file: ".github/agents/spec-review.md"
+    # Daily run cap — bounds token spend if a PR firehose or stuck
+    # comment loop fires the workflow more than expected.
+    cost_guard:
+      enabled: true
+      daily_max_runs: 50
+      window_hours: 24
+
+  # ── Issue auto-fix agent
+  # When a CODEOWNER applies the configured label to an issue, an agent
+  # opens a DRAFT pull request fixing it. See:
+  #   .openspec/specs/issue-autofix.spec.yaml
+  #   .github/agents/issue-autofix.md
+  #   .github/workflows/issue-autofix.yml
+  # OFF by default — opt in once you've reviewed the security model.
+  issue_autofix:
+    enabled: false
+    label: "agent:autofix"
+    model: "anthropic/claude-sonnet-4-6"
+    goal_file: ".github/agents/issue-autofix.md"
+    # Hard caps on the agent's branch — exceeding either aborts the run.
+    max_changed_files: 20
+    max_diff_lines: 500
+    # Daily run cap — circuit breaker against label-loop abuse or
+    # accidental mass-labeling. When the cap is hit the workflow
+    # removes the label, comments, and exits cleanly.
+    cost_guard:
+      enabled: true
+      daily_max_runs: 10
+      window_hours: 24
+    # Paths the agent must NOT edit unless the issue body contains
+    # `agent:autofix-allow-sensitive` AND a second CODEOWNER comments
+    # `agent:autofix-approve-sensitive` on the issue.
+    sensitive_paths:
+      - ".github/workflows/**"
+      - ".github/CODEOWNERS"
+      - ".github/agents/**"
+      - "SECURITY.md"
+      - ".openspec/config.yaml"
+      - "setup.sh"
+      - "hooks/**"
+      - ".claude/hooks/**"
+
   implementation_skills:
     frontend: "frontend-pro"
     backend: "backend-pro"

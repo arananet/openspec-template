@@ -15,6 +15,11 @@ body:
         **Security bugs must go through [SECURITY.md](../../blob/main/SECURITY.md)
         — do not file them here.**
 
+        > **Maintainers:** if this bug looks small and self-contained,
+        > you can apply the `agent:autofix` label to have the
+        > [issue-autofix agent](../../blob/main/.github/agents/issue-autofix.md)
+        > draft a fix end-to-end. CODEOWNER-only; opens a draft PR for human review.
+
   - type: input
     id: version
     attributes:

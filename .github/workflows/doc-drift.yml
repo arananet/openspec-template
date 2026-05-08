@@ -1,0 +1,97 @@
+name: Doc drift
+
+# Tripwire: when a PR touches source files, it must also touch
+# README.md, CHANGELOG.md, or any file under docs/. This is a
+# low-bar check (touch, not diff quality) so it stays useful
+# without being noisy.
+#
+# Bypasses:
+#   - Apply the `skip-doc-drift` label for true no-user-impact changes.
+#   - Dependency-only PRs (lockfile / manifest churn) are auto-skipped.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions: read-all
+
+concurrency:
+  group: doc-drift-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    name: README / CHANGELOG / docs touched?
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Skip if `skip-doc-drift` label is present
+        id: skip
+        env:
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          if echo "$LABELS" | grep -q '"skip-doc-drift"'; then
+            echo "Label 'skip-doc-drift' set — skipping check."
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skipped=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute diff
+        if: steps.skip.outputs.skipped != 'true'
+        id: diff
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          CHANGED=$(git diff --name-only "origin/${BASE}...HEAD")
+          echo "$CHANGED"
+          {
+            echo "files<<EOF"
+            echo "$CHANGED"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Decide
+        if: steps.skip.outputs.skipped != 'true'
+        env:
+          FILES: ${{ steps.diff.outputs.files }}
+        run: |
+          set -euo pipefail
+          # Source files (extensions enforced by the spec hook).
+          SRC=$(echo "$FILES" | grep -E '\.(py|ts|js|tsx|jsx|go|java|rb|rs|cpp|c|cs|swift|kt|php)$' || true)
+          if [ -z "$SRC" ]; then
+            echo "✓ No source files touched — doc-drift not applicable."
+            exit 0
+          fi
+          # Dependency-only churn — skip.
+          NON_DEP=$(echo "$FILES" | grep -vE '^(package(-lock)?\.json|pnpm-lock\.yaml|yarn\.lock|requirements.*\.txt|pyproject\.toml|poetry\.lock|uv\.lock|go\.(mod|sum)|Cargo\.(toml|lock)|Gemfile(\.lock)?|composer\.(json|lock))$' | grep -E '\.(py|ts|js|tsx|jsx|go|java|rb|rs|cpp|c|cs|swift|kt|php)$' || true)
+          if [ -z "$NON_DEP" ]; then
+            echo "✓ Dependency-manifest-only PR — doc-drift skipped."
+            exit 0
+          fi
+          # Did docs change?
+          DOCS=$(echo "$FILES" | grep -E '^(README\.md|CHANGELOG\.md|docs/.+)$' || true)
+          if [ -n "$DOCS" ]; then
+            echo "✓ Source change accompanied by docs change."
+            echo "$DOCS" | sed 's/^/    /'
+            exit 0
+          fi
+          echo "::error::Source files changed but README.md, CHANGELOG.md, and docs/ are untouched."
+          echo ""
+          echo "Source files changed:"
+          echo "$NON_DEP" | sed 's/^/  /'
+          echo ""
+          echo "Fix one of:"
+          echo "  - Update README.md, CHANGELOG.md, or any file under docs/"
+          echo "  - Apply the 'skip-doc-drift' label if there is genuinely no user-facing impact"
+          exit 1

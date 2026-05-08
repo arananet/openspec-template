@@ -1,0 +1,141 @@
+name: Template Smoke Test
+
+# Weekly end-to-end test of the template itself.
+#
+# Most of the template's interesting behavior fires on DOWNSTREAM forks
+# (repo-init.yml, spec-bootstrap.yml only run when the user creates a
+# repo from the template). Without this smoke test, regressions go
+# undetected until a real user trips over them.
+#
+# This workflow simulates the first-fork experience inside an isolated
+# work tree and asserts the contracts that matter:
+#   - setup.sh runs cleanly on a fresh checkout
+#   - hooks/* are installed and executable
+#   - the require-spec-on-commit hook BLOCKS source commits without a spec
+#   - the require-spec-on-commit hook ALLOWS commits when a spec is staged
+#   - every workflow file parses as valid YAML
+#   - the placeholder substitution surface is intact
+
+on:
+  schedule:
+    - cron: "13 5 * * 1"   # 05:13 UTC every Monday
+  push:
+    branches: [main, master]
+    paths:
+      - "setup.sh"
+      - "hooks/**"
+      - ".claude/hooks/**"
+      - ".github/workflows/template-smoke-test.yml"
+  workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+  group: smoke-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Run template smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Python (for YAML validation)
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Install pyyaml
+        run: pip install --quiet pyyaml
+
+      - name: Stage a fresh sandbox copy of the repo
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/smoke
+          cp -a . /tmp/smoke/template
+          cd /tmp/smoke/template
+          rm -rf .git
+          git init -q -b main
+          git config user.email "smoke@test.local"
+          git config user.name  "smoke"
+          git add -A
+          git commit -qm "initial sandbox import"
+
+      - name: setup.sh installs hooks (idempotent)
+        working-directory: /tmp/smoke/template
+        run: |
+          set -euo pipefail
+          bash setup.sh
+          test -x .git/hooks/pre-commit
+          echo "✓ pre-commit hook installed and executable"
+          # Re-running must not blow up (idempotency).
+          bash setup.sh
+
+      - name: Hook BLOCKS source commit with no spec
+        working-directory: /tmp/smoke/template
+        run: |
+          set -euo pipefail
+          mkdir -p src
+          echo 'console.log(1);' > src/foo.ts
+          git add src/foo.ts
+          if git commit -m "should be blocked"; then
+            echo "::error::Pre-commit hook did NOT block a source commit without a spec"
+            exit 1
+          fi
+          echo "✓ Hook correctly blocked source-without-spec commit"
+          git restore --staged src/foo.ts
+          rm -rf src
+
+      - name: Hook ALLOWS source commit when spec is staged
+        working-directory: /tmp/smoke/template
+        run: |
+          set -euo pipefail
+          mkdir -p src .openspec/specs
+          echo 'console.log(1);' > src/foo.ts
+          cat > .openspec/specs/smoke.spec.yaml <<'EOF'
+          title: "Smoke spec"
+          slug: "smoke"
+          type: feature
+          status: review
+          description: "test"
+          acceptance_criteria: ["x"]
+          test_plan: ["y"]
+          EOF
+          git add src/foo.ts .openspec/specs/smoke.spec.yaml
+          git commit -m "spec + source together"
+          echo "✓ Hook allowed commit when spec was staged"
+
+      - name: Every workflow file parses as YAML
+        run: |
+          python3 - <<'PY'
+          import glob, sys, yaml
+          bad = []
+          for f in sorted(glob.glob(".github/workflows/*.yml")):
+              try:
+                  yaml.safe_load(open(f))
+              except Exception as e:
+                  bad.append((f, str(e)))
+          if bad:
+              for f, e in bad:
+                  print(f"::error file={f}::{e}")
+              sys.exit(1)
+          print(f"✓ {len(glob.glob('.github/workflows/*.yml'))} workflow files parse cleanly")
+          PY
+
+      - name: Placeholder surface is intact
+        run: |
+          set -euo pipefail
+          # The template SHIPS with placeholders in config.yaml — the smoke
+          # test asserts they are still there, since accidental substitution
+          # would break the onboarding flow for downstream forks.
+          if ! grep -q '{{' .openspec/config.yaml; then
+            echo "::error::.openspec/config.yaml has no {{PLACEHOLDER}} tokens — onboarding flow is broken"
+            exit 1
+          fi
+          echo "✓ Placeholder tokens still present in config.yaml"

@@ -109,7 +109,7 @@ questions:
     prompt: "What is the first feature you want to build? I'll scaffold an initial spec file for it. (press Enter to skip)"
     required: false
     type: string
-    action: "run `gh openspec scaffold '<answer>'` after config is written"
+    action: "run `scripts/openspec scaffold '<answer>'` after config is written"
 
 after_completion:
   instructions: |
@@ -125,7 +125,7 @@ after_completion:
     4. Replace {{TEAM_NAME}} in .github/CODEOWNERS with a real GitHub team slug
        (or fall back to the individual owner if no team exists yet).
     5. If the user answered the `first_spec` question, run:
-          gh openspec scaffold "<their answer>"
+          scripts/openspec scaffold "<their answer>"
        and show them the created .openspec/specs/<slug>.spec.yaml file.
     6. Tell the user:
           "OpenSpec is configured. Run `bash setup.sh` to install git hooks.

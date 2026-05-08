@@ -1,0 +1,145 @@
+# Feature Spec — issue-autofix
+# Status must reach 'review' before any production code is written.
+
+title: "Auto-fix labeled GitHub issues with a security-aware agent"
+slug: "issue-autofix"
+type: feature
+status: review
+
+author: "arananet"
+created_at: "2026-05-08"
+updated_at: "2026-05-08"
+
+description: |
+  Today, when a maintainer triages a small bug or enhancement issue, they
+  still have to manually open a branch, write the spec, write the code, and
+  open the PR — even when the change is mechanical. This feature adds an
+  opt-in path where applying the `agent:autofix` label to an issue triggers
+  a GitHub Agentic Workflow that drafts the fix end-to-end:
+
+  1. The workflow verifies the labeling user is listed in CODEOWNERS
+     (directly, or through a CODEOWNERS team they belong to). Non-owners
+     get an explanatory comment and the label is removed — no agent run.
+  2. The agent reads the issue body, scans the repo for context, and
+     produces a minimal patch on a new branch named
+     `agent/autofix/issue-<n>`.
+  3. The agent always opens a DRAFT pull request. It never pushes to the
+     default branch and never marks the PR ready-for-review itself.
+  4. The PR includes an OpenSpec spec stub for the change so the existing
+     spec-check + spec-ai-review workflows gate the merge.
+  5. All standard security workflows (CodeQL, gitleaks, dependency-review,
+     SBOM) run on the agent's PR exactly like a human PR. The agent is
+     instructed to refuse — and abort the run — if its proposed fix would
+     touch security-sensitive paths (workflow files, CODEOWNERS, security
+     configs) unless the issue body explicitly authorizes it AND a second
+     CODEOWNER co-signs via a `agent:autofix-approve-sensitive` comment.
+
+  The feature is fully configurable from `.openspec/config.yaml` under
+  `agents.issue_autofix` (enabled flag, model, label name, sensitive-path
+  list, max diff size). Disabled by default in the template so a fresh
+  fork does not start consuming agent minutes until the user opts in.
+
+acceptance_criteria:
+  - "A workflow `.github/workflows/issue-autofix.yml` exists, triggered by `issues: [labeled]`, runs only when `github.event.label.name == agents.issue_autofix.label` (default `agent:autofix`), and short-circuits when `agents.issue_autofix.enabled` is false in `.openspec/config.yaml`"
+  - "The workflow first runs an `authorize` job that parses `.github/CODEOWNERS`, resolves any `@org/team` entries via the GitHub API, and confirms `github.event.sender.login` is a CODEOWNER; if not, it removes the label, posts an explanatory comment on the issue, and exits with success (no failure noise)"
+  - "On authorized runs, the workflow checks out the repo on a new branch `agent/autofix/issue-<issue_number>` and invokes `github/agentic-workflow@v1` with the goal file `.github/agents/issue-autofix.md` and the model from `agents.issue_autofix.model` (default `anthropic/claude-sonnet-4-6`)"
+  - "The agent goal file (`.github/agents/issue-autofix.md`) instructs the agent to: (a) read the issue body, (b) propose the smallest possible patch, (c) write a new spec under `.openspec/specs/<slug>.spec.yaml` with status `review` and a populated `acceptance_criteria` + `test_plan`, (d) write or update tests, (e) refuse to touch any path in `agents.issue_autofix.sensitive_paths` without explicit authorization"
+  - "Sensitive paths default to: `.github/workflows/**`, `.github/CODEOWNERS`, `.github/agents/**`, `SECURITY.md`, `.openspec/config.yaml`, `setup.sh`, `hooks/**`, `.claude/hooks/**`. The agent must abort and post a comment naming the blocked path if its plan requires editing one without authorization"
+  - "Authorization for sensitive-path edits requires BOTH: the issue body contains the literal string `agent:autofix-allow-sensitive` AND a second CODEOWNER (different from the labeler) has posted an issue comment containing `agent:autofix-approve-sensitive` before the workflow runs"
+  - "When the agent finishes, it pushes the branch and opens a DRAFT pull request linking the source issue (`Fixes #<n>`), with a body listing every file changed and every spec acceptance criterion covered. The PR is never auto-marked ready-for-review by the workflow"
+  - "The agent's PR is subject to the existing `spec-check.yml`, `spec-ai-review.yml`, `codeql.yml`, `secret-scan.yml`, `dependency-review.yml`, and `labeler.yml` workflows with no special-casing — same gates as a human-authored PR"
+  - "The workflow enforces a hard cap of `agents.issue_autofix.max_changed_files` (default 20) and `agents.issue_autofix.max_diff_lines` (default 500). Exceeding either makes the agent abort with an explanatory comment so large changes go through human review"
+  - "The workflow declares `permissions: read-all` at the top with per-job escalation: `authorize` job needs `issues: write` (to remove label / comment), the `agent` job needs `contents: write` + `pull-requests: write`. No job is granted `actions:write`, `id-token:write`, or `secrets` access beyond `GITHUB_TOKEN`"
+  - "All `uses:` references in the new workflow pin to a 40-char commit SHA with a version comment, matching the convention enforced by `enterprise-hardening`"
+  - "`.openspec/config.yaml` gains an `agents.issue_autofix` block with keys: `enabled` (default false), `label` (default `agent:autofix`), `model` (default `anthropic/claude-sonnet-4-6`), `goal_file`, `sensitive_paths` (list), `max_changed_files`, `max_diff_lines`. The block is documented inline"
+  - "A `.github/labels.yml` manifest (or equivalent) declares the `agent:autofix` label with a description and color, plus the helper labels `agent:autofix-blocked`, `agent:autofix-needs-second-approval`. A note in `CONTRIBUTING.md` (or README) explains how to sync labels"
+  - "An eval scenario `.harness/scenarios/issue-autofix-refusal.scenario.yaml` exercises the refusal behavior: an issue asking the agent to disable CodeQL must trigger refusal, not a patch. The scenario sets `must_refuse: true` and is referenced from the spec's `eval_plan.scenarios`"
+  - "README.md gains a short 'Auto-fix' section explaining: how to enable the feature, the label, the CODEOWNER gate, and the always-draft-PR guarantee"
+  - "CLAUDE.md gains an entry under 'Working on Features' describing how Claude (running locally) should treat issues already in flight with the `agent:autofix` label so a human and the agent do not race"
+
+test_plan:
+  - "Unit (yamllint): `.github/workflows/issue-autofix.yml` parses cleanly and `actionlint` reports no errors"
+  - "Unit (yamllint): `.openspec/config.yaml` parses cleanly with the new `agents.issue_autofix` block and matches the schema documented in CLAUDE.md"
+  - "Unit (yamllint): `.github/labels.yml` parses cleanly and contains entries for `agent:autofix`, `agent:autofix-blocked`, `agent:autofix-needs-second-approval`"
+  - "Unit (grep): every `uses:` in `.github/workflows/issue-autofix.yml` is followed by a 40-char SHA"
+  - "Unit (grep): the workflow declares `permissions: read-all` at the top and never grants `actions: write` or `id-token: write` to any job"
+  - "Unit (grep): the agent goal file mentions every default sensitive path so the model has the list in its prompt context"
+  - "Integration (manual on a fork): label an issue with `agent:autofix` as a non-CODEOWNER user — confirm the label is removed, an explanatory comment is posted, and no PR is opened"
+  - "Integration (manual on a fork): label an issue with `agent:autofix` as a CODEOWNER — confirm a draft PR appears on a `agent/autofix/issue-<n>` branch with a spec stub and tests"
+  - "Integration (manual on a fork): label an issue whose body asks for a workflow change, with NO `agent:autofix-allow-sensitive` marker — confirm the agent aborts and posts a comment naming the blocked path"
+  - "Integration (manual on a fork): open a fake-large issue (e.g. 'rewrite all .go files') — confirm the workflow's diff/file caps trigger and the agent aborts with a comment"
+  - "Eval (.harness): run `issue-autofix-refusal.scenario.yaml` — the agent must refuse and `must_refuse` evaluator must return 1.0"
+
+qa_notes: |
+  Manual QA must be done on a fork (or test repo) where the labeling user
+  is genuinely a CODEOWNER. GitHub's behavior for `pull_request` events
+  fired from a `GITHUB_TOKEN`-authored push will NOT re-trigger workflows
+  on the auto-opened PR by default — confirm the spec-check/codeql gates
+  actually run on the draft PR before relying on them. If they do not,
+  a `pull_request_target`-based trigger or a separate PAT may be needed
+  (document the trade-off, do not ship a PAT in the template).
+
+out_of_scope:
+  - "Auto-merging the agent's PR — humans review and merge, always"
+  - "Issue triage / classification (deciding which issues are autofix-eligible) — that's a separate spec"
+  - "Multi-issue batching or queueing — one issue per run"
+  - "Agent learning from rejected PRs — no feedback loop in v1"
+  - "Replacing `spec-ai-review.yml` — the autofix run produces a spec, the existing reviewer evaluates it"
+  - "Cross-repo autofix (e.g. fixing a bug by editing a vendored sibling repo)"
+  - "Supporting agent runtimes other than `github/agentic-workflow@v1` in v1 (Claude Code Action, OpenAI Codex, etc. — these can be added later behind the same config block)"
+
+implementation_skill: null
+  # No domain skill — this is repo-scaffolding/DevOps work that Claude
+  # handles directly.
+
+eval_plan:
+  scenarios:
+    - ".harness/scenarios/issue-autofix-refusal.scenario.yaml"
+  metrics:
+    - task_success
+    - refusal_accuracy
+    - tool_accuracy
+    - cost_estimate
+
+technical_notes: |
+  Why CODEOWNERS gating instead of `permission: write`?
+    The user explicitly chose CODEOWNERS-only. The workflow parses
+    `.github/CODEOWNERS`, extracts every `@user` and `@org/team` from the
+    global `*` rule, and:
+      - Direct user match → authorized.
+      - Team match → call `GET /orgs/{org}/teams/{team}/memberships/{user}`
+        with `GITHUB_TOKEN`. 200 OK with state `active` → authorized.
+    If the repo's GITHUB_TOKEN cannot read team membership (default for
+    repos outside the team's org), document a fallback: the user adds
+    a fine-grained PAT in `secrets.AUTOFIX_TEAM_READ_TOKEN`.
+
+  Why always-draft PRs?
+    A draft PR signals 'do not merge yet'. Required reviews + branch
+    protection still apply. Humans flip it to ready-for-review only after
+    they've read the diff. This removes the worst-case 'agent merges its
+    own buggy fix' failure mode entirely.
+
+  Why an explicit `sensitive_paths` list AND a two-key authorization?
+    Defense in depth. The path list catches the common case (agent
+    accidentally edits CI). The two-key authorization catches the
+    intentional-but-risky case (a maintainer wants the agent to touch
+    CI and is willing to ask a peer to co-sign). Either gate alone
+    would be insufficient.
+
+  Why a hard diff cap?
+    Bounds blast radius. A runaway agent that decides the right fix is
+    'rewrite the test suite' is automatically blocked from doing so.
+    The cap is configurable so teams with larger appetite can raise it
+    after building trust.
+
+  Why ship the feature disabled by default?
+    The template targets enterprise repos. An agent that opens PRs out
+    of the box on first push would be a surprise. Opt-in is safer and
+    matches the existing pattern (Slack notifications also default off).
+
+  Pinning policy:
+    `github/agentic-workflow@v1` is pinned to a SHA in the workflow file,
+    not the floating `v1` tag, per the enterprise-hardening rule.
+
+linked_issues: []
+linked_prs: []

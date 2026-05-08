@@ -42,7 +42,7 @@ jobs:
         id: init
         run: |
           if [ ! -f .openspec/config.yaml ]; then
-            echo "::warning::OpenSpec not initialized. Run 'gh openspec init'."
+            echo "::warning::OpenSpec not initialized. Run 'scripts/openspec init'."
             echo "configured=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -77,7 +77,7 @@ jobs:
             echo "Changed source files:"
             echo "$SOURCE" | sed 's/^/  /'
             echo ""
-            echo "Fix: gh openspec scaffold '<feature-name>'"
+            echo "Fix: scripts/openspec scaffold '<feature-name>'"
             exit 1
           fi
 

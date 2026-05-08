@@ -1,0 +1,57 @@
+# Repository label manifest.
+#
+# This file is the source of truth for labels that need explicit definitions
+# (color + description). It is consumed by `gh label create` (manually) or
+# any third-party label-sync action you wire up — the template does not
+# install one by default to keep workflows minimal.
+#
+# To sync once after first-time setup, from the repo root:
+#
+#   yq '.[] | "gh label create \"" + .name + "\" --color \"" + .color +
+#       "\" --description \"" + .description + "\" --force"' \
+#     .github/labels.yml | sh
+#
+# (Requires `yq` and an authenticated `gh` CLI.)
+
+# ── Issue auto-fix agent (see .openspec/specs/issue-autofix.spec.yaml)
+- name: "agent:autofix"
+  color: "5319e7"
+  description: "Trigger the issue-autofix agent. CODEOWNER-only."
+
+- name: "agent:autofix-blocked"
+  color: "b60205"
+  description: "Auto-fix run aborted (size cap, sensitive path, or unsafe change)."
+
+- name: "agent:autofix-needs-second-approval"
+  color: "fbca04"
+  description: "Issue requests sensitive-path edits — awaiting second CODEOWNER co-sign."
+
+# ── OpenSpec workflow
+- name: "spec"
+  color: "0e8a16"
+  description: "Touches files under .openspec/."
+
+- name: "openspec-config"
+  color: "0e8a16"
+  description: "Modifies .openspec/config.yaml or onboarding files."
+
+- name: "setup"
+  color: "0075ca"
+  description: "Project setup required (placeholder config detected)."
+
+# ── Standard governance buckets
+- name: "ci"
+  color: "1d76db"
+  description: "CI/CD or workflow changes."
+
+- name: "security"
+  color: "b60205"
+  description: "Security-sensitive change."
+
+- name: "docs"
+  color: "0075ca"
+  description: "Documentation only."
+
+- name: "dependencies"
+  color: "ededed"
+  description: "Dependency updates."

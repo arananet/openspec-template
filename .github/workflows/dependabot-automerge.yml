@@ -1,0 +1,66 @@
+name: Dependabot auto-merge
+
+# Auto-approve and enable auto-merge for Dependabot patch-level updates.
+# Minor and major updates still get human review.
+#
+# Requires:
+#   - "Allow auto-merge" enabled in Settings → General
+#   - Branch protection set up so auto-merge waits for required checks
+#
+# Why pull_request_target?
+#   PRs from `dependabot[bot]` get read-only secrets on `pull_request`.
+#   This workflow only reads PR metadata via the Dependabot fetch-metadata
+#   action — it does NOT check out the PR's code, so the standard
+#   `pull_request_target` foot-gun does not apply.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions: read-all
+
+concurrency:
+  group: dependabot-automerge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  automerge:
+    name: Auto-merge patch updates
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: write       # to enable auto-merge
+      pull-requests: write  # to approve and label
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@d7267f607e9d3fb96fc2fbe83e0af444713e90b7 # v2.3.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Approve patch update
+        if: steps.meta.outputs.update-type == 'version-update:semver-patch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr review --approve "$PR_URL" --body "Auto-approved patch-level Dependabot update."
+
+      - name: Enable auto-merge for patch update
+        if: steps.meta.outputs.update-type == 'version-update:semver-patch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr merge --auto --squash "$PR_URL"
+
+      - name: Comment on minor / major updates
+        if: steps.meta.outputs.update-type != 'version-update:semver-patch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+        run: |
+          gh pr comment "$PR_URL" --body "This is a \`${UPDATE_TYPE}\` update — auto-merge skipped. Please review the changelog and merge manually."

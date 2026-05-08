@@ -1,0 +1,145 @@
+# Feature Spec — template-production-readiness
+# Status must reach 'review' before any production code is written.
+
+title: "Close production-readiness gaps in the OpenSpec template"
+slug: "template-production-readiness"
+type: feature
+status: review
+
+author: "arananet"
+created_at: "2026-05-08"
+updated_at: "2026-05-08"
+
+description: |
+  Audit-driven hardening pass on the template. The previous
+  `enterprise-hardening` work added the heavy machinery (CodeQL, gitleaks,
+  dep-review, SBOM, governance docs, devcontainer, harness). This spec
+  closes the remaining production-grade gaps that any team forking the
+  template would otherwise hit on day one:
+
+  1. The `gh openspec` extension (https://github.com/arananet/gh-openspec)
+     is referenced everywhere but never installed — so a fresh clone /
+     Codespace runs into "unknown command" the first time the user
+     follows the README. setup.sh and the devcontainer must install it.
+
+  2. There is no CI lint for the workflows themselves — pre-commit covers
+     contributors who opted in, but a bad PR can still merge a broken
+     `.github/workflows/*.yml`. A single `lint.yml` job runs actionlint,
+     yamllint, shellcheck, and markdownlint on every PR.
+
+  3. release-drafter drafts notes but the template ships no actual release
+     pipeline. Add `release.yml` that on a `v*` tag: generates an SBOM,
+     attaches it, signs the artifacts with keyless cosign, and produces
+     SLSA build provenance via `actions/attest-build-provenance`.
+
+  4. OSSF Scorecard is missing — a single workflow gives the repo a public
+     trust signal and surfaces supply-chain regressions weekly.
+
+  5. Dependabot opens patch-level PRs that pile up. A small auto-merge
+     workflow approves and merges them (only when all required checks
+     pass) for `version-update:semver-patch` updates.
+
+  6. End-to-end smoke test of the template itself. A weekly cron checks
+     out the template into a clean workdir, runs `setup.sh`, verifies
+     hooks install, simulates a placeholder-config commit (must fail),
+     a real-config commit (must pass), and validates the bootstrap issue
+     payload renders. Catches regressions you can't currently see because
+     `repo-init.yml` and `spec-bootstrap.yml` only fire on downstream forks.
+
+  7. DCO sign-off enforcement on PRs. Lightweight, OSS-standard, no PAT
+     required. Documents the alternative (signed commits via the existing
+     branch-protection ruleset) in `docs/BRANCH_PROTECTION.md`.
+
+  All workflows: pinned action SHAs, `permissions: read-all` at top,
+  per-job least-privilege escalation, `timeout-minutes` set, opt-in
+  for anything that costs compute or surface noise on a fresh fork.
+
+acceptance_criteria:
+  - "`setup.sh` installs the `arananet/gh-openspec` extension via `gh extension install` (idempotent — skips if already installed) and prints a clear message if `gh` is missing"
+  - "`.devcontainer/devcontainer.json` runs `gh extension install arananet/gh-openspec --force` in `postCreateCommand` so Codespaces are turn-key from the first boot"
+  - "A new `.github/workflows/lint.yml` runs on every PR with four jobs (actionlint, yamllint, shellcheck, markdownlint) using SHA-pinned actions and finishes in under 3 minutes on a typical PR"
+  - "`lint.yml` declares `permissions: read-all` and never grants any write permission to any job (lint is read-only)"
+  - "A new `.github/workflows/release.yml` triggers on `push: tags: ['v*']` and `workflow_dispatch`, generates a CycloneDX SBOM, builds a `source.tar.gz` of the tagged commit, signs both with keyless cosign (`id-token: write` only), produces SLSA build provenance via `actions/attest-build-provenance`, and uploads everything as release assets via `softprops/action-gh-release`"
+  - "`release.yml` is gated by an existence check on `.openspec/config.yaml` placeholders — refuses to run while `{{` tokens are present so unconfigured forks cannot accidentally publish"
+  - "A new `.github/workflows/scorecard.yml` runs the OSSF Scorecard analysis weekly + on `branch_protection_rule` + `workflow_dispatch`, with `id-token: write` and `security-events: write`, uploads SARIF to GitHub code scanning, and publishes results to the OpenSSF API"
+  - "A new `.github/workflows/dependabot-automerge.yml` listens to `pull_request_target: [opened]` events from `dependabot[bot]`, parses the metadata via `dependabot/fetch-metadata@v2`, auto-approves and enables auto-merge ONLY when `update-type == version-update:semver-patch` AND the PR targets a known dependency manifest"
+  - "Dependabot auto-merge workflow uses minimum-privilege permissions: `contents: write` and `pull-requests: write` only on the auto-merge job; `read-all` at top"
+  - "A new `.github/workflows/template-smoke-test.yml` runs weekly + on `workflow_dispatch` and asserts: (a) `setup.sh` exits 0 on a fresh checkout, (b) `git commit` is rejected when source files staged with no spec, (c) `git commit` is accepted when a spec is staged, (d) all `.github/workflows/*.yml` parse, (e) `.openspec/config.yaml` has no unresolved `{{` tokens once a stub config is written"
+  - "A new `.github/workflows/dco.yml` checks every PR commit for a `Signed-off-by:` trailer matching the author. Failures are reported as PR check failures with a remediation comment that explains `git commit -s --amend`"
+  - "`docs/BRANCH_PROTECTION.md` is updated with a table of the new required checks (`Lint`, `OSSF Scorecard analysis`, `DCO`) and a note about choosing DCO vs commit signing"
+  - "README.md gains a 'Production checklist' section listing every check a downstream maintainer should enable before going live (config filled, hooks installed, branch protection applied, scorecard reviewed)"
+  - "CLAUDE.md mentions the gh-openspec extension prerequisite under 'First-Time Setup' so Claude installs it during onboarding if missing"
+
+test_plan:
+  - "Unit (yamllint): every new workflow parses cleanly under the project's `.yamllint` rules"
+  - "Unit (grep): every `uses:` in the new workflows is followed by a 40-char SHA — no floating tags except `github/agentic-workflow@v1` which matches the existing precedent"
+  - "Unit (grep): every new workflow declares `permissions: read-all` at the top"
+  - "Unit (grep): `release.yml` requests `id-token: write` only on the cosign / attestation step's job, not at the workflow level"
+  - "Unit (grep): `dependabot-automerge.yml` does not auto-merge `version-update:semver-major` or `version-update:semver-minor` updates"
+  - "Unit (shellcheck): the new shell logic in `setup.sh` for installing gh-openspec passes shellcheck with no errors"
+  - "Integration (manual on a fork): tag `v0.0.1-test`, confirm `release.yml` produces an SBOM, signed checksums, and a SLSA provenance attestation; verify with `cosign verify-blob`"
+  - "Integration (manual on a fork): merge a Dependabot patch PR — confirm auto-merge fires only after required checks pass"
+  - "Integration (manual on a fork): open a PR without `Signed-off-by:` — confirm DCO check fails and the remediation comment appears"
+  - "Integration (cron): wait for the first `template-smoke-test.yml` run and confirm green; introduce a deliberate breakage (e.g. typo in setup.sh) on a branch and confirm the smoke test catches it"
+  - "Manual: open a fresh Codespace from the template and confirm `gh openspec --help` works without any extra steps"
+
+qa_notes: |
+  Cosign keyless signing requires `id-token: write` on the GitHub OIDC
+  token. The release workflow scopes that permission to a single job,
+  not the whole workflow.
+
+  OSSF Scorecard publishes results publicly. If the user's fork is in a
+  private repo, the workflow falls back to SARIF-only mode (the action
+  detects this automatically via `publish_results: ${{ github.event.repository.private == false }}`).
+
+  Auto-merge requires the repo to have "Allow auto-merge" enabled in
+  Settings → General. Document this in the PR that lands the workflow.
+
+out_of_scope:
+  - "Replacing the existing `sbom.yml` (release.yml generates SBOMs in addition; sbom.yml stays for the on-demand path)"
+  - "Branch protection automation script — still doc-only in `docs/BRANCH_PROTECTION.md`; user explicitly de-scoped #5 from the audit"
+  - "Conventional-commit enforcement — pre-commit ships an opt-in hook already; CI enforcement is a separate spec"
+  - "CLA bot or contributor agreement (DCO is sufficient for most projects; CLA is org-policy-specific)"
+  - "Multi-language CI matrix — language-agnostic template; per-ecosystem CI is for downstream specs"
+  - "Self-update / template-sync mechanism for downstream forks — separate spec, requires app or PAT"
+
+implementation_skill: null
+  # No domain skill — DevOps / repo-scaffolding work that Claude handles directly.
+
+eval_plan:
+  scenarios: []
+  metrics: []
+
+technical_notes: |
+  Why a single `lint.yml` instead of four separate workflows?
+    Faster PR feedback (one queue vs four), one required-check name to
+    add to branch protection, and shared checkout cache.
+
+  Why DCO over signed commits as the default?
+    DCO is contributor-friendly (just `git commit -s`), works without
+    GPG/SSH key setup, and is the OSS norm. Signed commits are stricter
+    but raise the contributor bar — we ship DCO and document signed
+    commits as the upgrade path in BRANCH_PROTECTION.md.
+
+  Why auto-merge only patches?
+    Patch updates by SemVer contract are bug-fix-only. Minor updates
+    add features (and sometimes deprecations). Major updates break.
+    Auto-merging patches is the safe sweet spot — minor/major still
+    get a human eye.
+
+  Why a separate release.yml when sbom.yml exists?
+    `sbom.yml` runs on an `on: release: published` trigger today —
+    it expects a release to already exist. `release.yml` is the *creator*:
+    tag → build → SBOM → sign → attest → publish release. The two are
+    complementary, not duplicative.
+
+  Why `pull_request_target` for the Dependabot auto-merge workflow?
+    `pull_request` events from `dependabot[bot]` run with read-only
+    permissions for security reasons. `pull_request_target` runs in
+    the context of the base ref with the target's permissions, which
+    is required to call `gh pr merge --auto`. Critically, the workflow
+    only reads PR metadata — it does NOT check out the PR's code, so
+    the standard `pull_request_target` foot-gun doesn't apply.
+
+linked_issues: []
+linked_prs: []

@@ -1,0 +1,271 @@
+#!/usr/bin/env bash
+# OpenSpec — local spec-driven development helper.
+#
+# Zero external dependencies: bash + coreutils + git only.
+# No gh CLI, no yq, no jq, no python required.
+#
+# Subcommands:
+#   scaffold "<name>" [--type bugfix|feature] [--force]
+#       Create .openspec/specs/<slug>.spec.yaml from a template.
+#
+#   check [--strict] [--pr <number>]
+#       Validate every spec under .openspec/specs/. --strict treats
+#       `status: draft` as a failure. --pr scopes the check to the
+#       diff between origin/<base> and HEAD (used in CI; locally,
+#       it falls back to staged + working-tree diff).
+#
+#   init
+#       Print initialization status (.openspec/config.yaml presence
+#       and whether placeholder tokens remain).
+#
+#   --help | -h
+#       Show this help text.
+
+set -euo pipefail
+
+# ── Paths ─────────────────────────────────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+SPECS_DIR="$ROOT/.openspec/specs"
+TEMPLATES_DIR="$ROOT/.openspec/templates"
+CONFIG_FILE="$ROOT/.openspec/config.yaml"
+
+# ── Helpers ───────────────────────────────────────────────────────────
+err() { printf 'error: %s\n' "$*" >&2; }
+warn() { printf 'warning: %s\n' "$*" >&2; }
+info() { printf '%s\n' "$*"; }
+
+slugify() {
+  printf '%s' "$1" \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g'
+}
+
+today_iso() { date -u +%Y-%m-%d; }
+
+git_user() {
+  git config --get user.name 2>/dev/null || printf '%s' "${USER:-unknown}"
+}
+
+# ── scaffold ──────────────────────────────────────────────────────────
+cmd_scaffold() {
+  local name="" type="feature" force=0
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --type) type="${2:-feature}"; shift 2 ;;
+      --force) force=1; shift ;;
+      -*) err "unknown flag: $1"; return 2 ;;
+      *) if [ -z "$name" ]; then name="$1"; fi; shift ;;
+    esac
+  done
+
+  if [ -z "$name" ]; then
+    err 'missing spec name. Usage: openspec scaffold "<name>" [--type bugfix]'
+    return 2
+  fi
+
+  case "$type" in
+    feature|bugfix) ;;
+    *) err "invalid --type '$type' (expected feature or bugfix)"; return 2 ;;
+  esac
+
+  local template="$TEMPLATES_DIR/${type}.spec.yaml"
+  [ -f "$template" ] || { err "template not found: $template"; return 1; }
+
+  local slug; slug="$(slugify "$name")"
+  [ -n "$slug" ] || { err "could not slugify name: '$name'"; return 1; }
+
+  mkdir -p "$SPECS_DIR"
+  local out="$SPECS_DIR/${slug}.spec.yaml"
+
+  if [ -e "$out" ] && [ "$force" -ne 1 ]; then
+    err "spec already exists: $out (pass --force to overwrite)"
+    return 1
+  fi
+
+  local author date status
+  author="$(git_user)"
+  date="$(today_iso)"
+  status="draft"
+
+  # Substitute placeholders. sed -i is portable enough across GNU/BSD
+  # when we use a temp file rather than -i'' / -i ''.
+  sed \
+    -e "s|{{FEATURE_NAME}}|${name//|/\\|}|g" \
+    -e "s|{{SLUG}}|${slug}|g" \
+    -e "s|{{STATUS}}|${status}|g" \
+    -e "s|{{AUTHOR}}|${author//|/\\|}|g" \
+    -e "s|{{DATE}}|${date}|g" \
+    "$template" > "$out"
+
+  info "✓ created $out"
+  info ""
+  info "Next steps:"
+  info "  1. Open the file and fill in description, acceptance_criteria, test_plan."
+  info "  2. When ready for implementation, set status: review."
+  info "  3. Commit the spec alongside the source changes it covers."
+}
+
+# ── check helpers ─────────────────────────────────────────────────────
+spec_key_present() {
+  # spec_key_present <file> <field>  — 0 if the key appears as a top-level entry.
+  awk -v f="$2" '$0 ~ "^"f":" { found=1; exit } END { exit found ? 0 : 1 }' "$1"
+}
+
+spec_scalar_value() {
+  # Print the inline value for `key: value` (empty for block scalars / lists).
+  awk -v f="$2" '
+    $0 ~ "^"f":" {
+      sub(/^[^:]+:[[:space:]]*/, "")
+      gsub(/^"|"$/, "")
+      print
+      exit
+    }
+  ' "$1"
+}
+
+spec_list_count() {
+  # spec_list_count <file> <field>  — count `- ...` items under <field>
+  awk -v f="$2" '
+    $0 ~ "^"f":" { in_list=1; next }
+    in_list && /^[a-z_]+:/ { in_list=0 }
+    in_list && /^[[:space:]]*-[[:space:]]/ { n++ }
+    END { print n+0 }
+  ' "$1"
+}
+
+spec_status() {
+  awk '/^status:/ { gsub(/^status:[[:space:]]*/, ""); gsub(/"/,""); print; exit }' "$1"
+}
+
+# ── check ─────────────────────────────────────────────────────────────
+cmd_check() {
+  local strict=0 pr=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --strict) strict=1; shift ;;
+      --pr) pr="${2:-}"; shift 2 ;;
+      -*) err "unknown flag: $1"; return 2 ;;
+      *) err "unexpected arg: $1"; return 2 ;;
+    esac
+  done
+
+  if [ ! -f "$CONFIG_FILE" ]; then
+    warn "$CONFIG_FILE not found — skipping config-gated checks."
+  elif grep -q '{{' "$CONFIG_FILE"; then
+    warn "$CONFIG_FILE still contains placeholder tokens — onboarding incomplete."
+  fi
+
+  if [ ! -d "$SPECS_DIR" ]; then
+    info "no specs directory yet — nothing to validate"
+    return 0
+  fi
+
+  local fail=0 count=0
+  while IFS= read -r -d '' spec; do
+    count=$((count + 1))
+    local name; name="$(basename "$spec")"
+    local errors=()
+
+    for field in title description acceptance_criteria test_plan status; do
+      spec_key_present "$spec" "$field" \
+        || errors+=("missing required field: $field")
+    done
+
+    local title; title="$(spec_scalar_value "$spec" title)"
+    [ -n "$title" ] || errors+=("title is empty")
+
+    local status; status="$(spec_status "$spec")"
+    case "$status" in
+      draft|review|approved) ;;
+      "") errors+=("status is empty") ;;
+      *) errors+=("invalid status: '$status' (expected draft|review|approved)") ;;
+    esac
+    if [ "$strict" -eq 1 ] && [ "$status" = "draft" ]; then
+      errors+=("status is 'draft' but --strict was set")
+    fi
+
+    local n_ac; n_ac="$(spec_list_count "$spec" acceptance_criteria)"
+    [ "$n_ac" -ge 1 ] || errors+=("acceptance_criteria has 0 items (need ≥1)")
+    local n_tp; n_tp="$(spec_list_count "$spec" test_plan)"
+    [ "$n_tp" -ge 1 ] || errors+=("test_plan has 0 items (need ≥1)")
+
+    if [ "${#errors[@]}" -eq 0 ]; then
+      info "✓ $name"
+    else
+      fail=1
+      info "✗ $name"
+      printf '    - %s\n' "${errors[@]}"
+    fi
+  done < <(find "$SPECS_DIR" -maxdepth 1 -name '*.spec.yaml' -print0 2>/dev/null | sort -z)
+
+  if [ "$count" -eq 0 ]; then
+    info "no specs found in $SPECS_DIR"
+  fi
+
+  # ── PR-coverage check (source files require a spec change) ──
+  if [ -n "$pr" ]; then
+    local base head changed source specs
+    base="${GITHUB_BASE_REF:-main}"
+    head="${GITHUB_SHA:-HEAD}"
+    if git rev-parse --verify "origin/$base" >/dev/null 2>&1; then
+      changed="$(git diff --name-only "origin/$base...$head" 2>/dev/null || true)"
+    else
+      changed="$(git diff --name-only --cached 2>/dev/null; git diff --name-only 2>/dev/null)"
+    fi
+    source="$(printf '%s\n' "$changed" | grep -E '\.(py|ts|js|tsx|jsx|go|java|rb|rs|cpp|c|cs|swift|kt|php)$' || true)"
+    specs="$(printf '%s\n' "$changed" | grep -E '^\.openspec/specs/.*\.spec\.yaml$' || true)"
+    if [ -n "$source" ] && [ -z "$specs" ]; then
+      err "source files changed but no spec change in PR #$pr:"
+      printf '%s\n' "$source" | sed 's/^/  /' >&2
+      fail=1
+    fi
+  fi
+
+  return "$fail"
+}
+
+# ── init ──────────────────────────────────────────────────────────────
+cmd_init() {
+  if [ ! -f "$CONFIG_FILE" ]; then
+    err ".openspec/config.yaml not found"
+    return 1
+  fi
+  if grep -q '{{' "$CONFIG_FILE"; then
+    info "OpenSpec is initialized but config has unresolved {{PLACEHOLDER}} tokens."
+    info "Open in Claude Code or edit $CONFIG_FILE manually."
+    return 0
+  fi
+  info "✓ OpenSpec is initialized and configured."
+}
+
+# ── help ──────────────────────────────────────────────────────────────
+cmd_help() {
+  cat <<'EOF'
+openspec — spec-driven development helper
+
+USAGE
+  scripts/openspec scaffold "<name>" [--type bugfix|feature] [--force]
+  scripts/openspec check [--strict] [--pr <number>]
+  scripts/openspec init
+  scripts/openspec --help
+
+EXAMPLES
+  scripts/openspec scaffold "user authentication"
+  scripts/openspec scaffold "fix login crash" --type bugfix
+  scripts/openspec check --strict
+  scripts/openspec check --pr 42
+
+Specs live at .openspec/specs/<slug>.spec.yaml.
+Templates: .openspec/templates/{feature,bugfix}.spec.yaml.
+EOF
+}
+
+# ── dispatch ──────────────────────────────────────────────────────────
+case "${1:-}" in
+  scaffold) shift; cmd_scaffold "$@" ;;
+  check)    shift; cmd_check "$@"    ;;
+  init)     shift; cmd_init "$@"     ;;
+  ""|-h|--help|help) cmd_help ;;
+  *) err "unknown command: $1"; cmd_help; exit 2 ;;
+esac

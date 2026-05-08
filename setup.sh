@@ -40,8 +40,17 @@ done
 echo ""
 echo "Git hooks installed. OpenSpec enforcement is now active."
 echo ""
+
+# Make the local OpenSpec CLI executable. No external tools needed —
+# scripts/openspec depends only on bash + coreutils + git.
+if [ -f scripts/openspec ]; then
+  chmod +x scripts/openspec
+  echo "  ✓ scripts/openspec is ready (run 'scripts/openspec --help')"
+fi
+
+echo ""
 echo "Next steps:"
-echo "  1. If config.yaml still has placeholders, open in Claude Code"
-echo "     (it will guide you through the setup questions)"
-echo "  2. Or edit .openspec/config.yaml manually"
-echo "  3. Run: gh openspec check"
+echo "  1. If config.yaml still has placeholders, open in Claude Code —"
+echo "     it will read CLAUDE.md and walk you through onboarding."
+echo "  2. Or edit .openspec/config.yaml manually."
+echo "  3. Run: scripts/openspec check"

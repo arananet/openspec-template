@@ -3,8 +3,9 @@
   "image": "mcr.microsoft.com/devcontainers/universal:2",
 
   // Runs once when the Codespace or Dev Container is first created.
-  // Installs git hooks so OpenSpec enforcement is active from the first commit.
-  "postCreateCommand": "bash setup.sh && echo '✓ OpenSpec git hooks installed'",
+  // Installs git hooks and makes scripts/openspec executable.
+  // No external dependencies — bash + coreutils + git only.
+  "postCreateCommand": "bash setup.sh",
 
   "customizations": {
     "vscode": {

@@ -1,4 +1,4 @@
-# Bugfix Spec — created by gh openspec scaffold --type bugfix
+# Bugfix Spec — created by scripts/openspec scaffold --type bugfix
 # Fill in all sections before moving status to 'review'.
 
 title: "{{FEATURE_NAME}}"

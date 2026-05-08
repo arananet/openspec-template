@@ -77,8 +77,8 @@ jobs:
 
           1. Edit \`.openspec/config.yaml\` — replace all \`{{PLACEHOLDER}}\` values
           2. Run \`bash setup.sh\` to install git hooks
-          3. Run \`gh openspec scaffold 'your first feature'\` to create your first spec
-          4. Run \`gh openspec check\` to validate
+          3. Run \`scripts/openspec scaffold 'your first feature'\` to create your first spec
+          4. Run \`scripts/openspec check\` to validate
 
           | File | Purpose |
           |------|---------|
