@@ -41,27 +41,16 @@ echo ""
 echo "Git hooks installed. OpenSpec enforcement is now active."
 echo ""
 
-# ── Install the gh openspec CLI extension (idempotent) ────────────────
-if command -v gh >/dev/null 2>&1; then
-  if gh extension list 2>/dev/null | grep -q 'arananet/gh-openspec'; then
-    echo "  ✓ gh-openspec extension already installed"
-  else
-    echo "Installing gh-openspec extension..."
-    if gh extension install arananet/gh-openspec 2>/dev/null; then
-      echo "  ✓ gh-openspec installed (try: gh openspec --help)"
-    else
-      echo "  ! gh-openspec install failed — run 'gh auth login' then retry:"
-      echo "    gh extension install arananet/gh-openspec"
-    fi
-  fi
-else
-  echo "  ! 'gh' CLI not found — install it from https://cli.github.com/ then run:"
-  echo "    gh extension install arananet/gh-openspec"
+# Make the local OpenSpec CLI executable. No external tools needed —
+# scripts/openspec depends only on bash + coreutils + git.
+if [ -f scripts/openspec ]; then
+  chmod +x scripts/openspec
+  echo "  ✓ scripts/openspec is ready (run 'scripts/openspec --help')"
 fi
 
 echo ""
 echo "Next steps:"
-echo "  1. If config.yaml still has placeholders, open in Claude Code"
-echo "     (it will guide you through the setup questions)"
-echo "  2. Or edit .openspec/config.yaml manually"
-echo "  3. Run: gh openspec check"
+echo "  1. If config.yaml still has placeholders, open in Claude Code —"
+echo "     it will read CLAUDE.md and walk you through onboarding."
+echo "  2. Or edit .openspec/config.yaml manually."
+echo "  3. Run: scripts/openspec check"

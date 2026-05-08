@@ -27,16 +27,10 @@ The harness proves **whether it is true** — via reproducible, measurable, exec
 
 ## Running scenarios
 
-```bash
-# Run all scenarios (adapt to your harness runner)
-gh openspec harness run
-
-# Run a single scenario
-gh openspec harness run scenarios/example-agent-task.scenario.yaml
-
-# Compare against a baseline trace
-gh openspec harness diff traces/baseline.json traces/latest.json
-```
+The template does not ship a built-in scenario runner — the eval harness
+is intentionally agnostic about your evaluation framework (DeepEval,
+promptfoo, in-house, etc.). Wire up whichever runner fits your stack
+and reference the scenario files from your CI workflow.
 
 ## Adding a scenario
 

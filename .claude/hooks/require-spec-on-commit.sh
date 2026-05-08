@@ -32,7 +32,7 @@ if [ -n "$SOURCE" ] && [ -z "$SPECS" ]; then
   echo ""
   echo "Fix:"
   echo "  /openspec-scaffold <feature-name>   (in Claude Code)"
-  echo "  gh openspec scaffold '<feature-name>'  (in terminal)"
+  echo "  scripts/openspec scaffold '<feature-name>'  (in terminal)"
   echo ""
   exit 2
 fi

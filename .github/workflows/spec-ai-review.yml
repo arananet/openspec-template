@@ -21,8 +21,60 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  cost-guard:
+    name: Cost guard (daily run cap)
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      proceed: ${{ steps.guard.outputs.proceed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Read cost_guard config
+        id: cfg
+        run: |
+          set -euo pipefail
+          enabled=$(awk '/^  spec_review:/{f=1;next} f && /^  [a-z]/{f=0} f && /cost_guard:/{g=1;next} g && /enabled:/{print $2;exit}' .openspec/config.yaml)
+          maxr=$(awk '/^  spec_review:/{f=1;next} f && /^  [a-z]/{f=0} f && /cost_guard:/{g=1;next} g && /daily_max_runs:/{print $2;exit}' .openspec/config.yaml)
+          win=$(awk '/^  spec_review:/{f=1;next} f && /^  [a-z]/{f=0} f && /cost_guard:/{g=1;next} g && /window_hours:/{print $2;exit}' .openspec/config.yaml)
+          echo "enabled=${enabled:-true}"             >> "$GITHUB_OUTPUT"
+          echo "daily_max_runs=${maxr:-50}"           >> "$GITHUB_OUTPUT"
+          echo "window_hours=${win:-24}"              >> "$GITHUB_OUTPUT"
+
+      - name: Count recent runs and decide
+        id: guard
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.cfg.outputs.enabled }}" != "true" ]; then
+            echo "Cost guard disabled in config — proceeding."
+            echo "proceed=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          MAX=${{ steps.cfg.outputs.daily_max_runs }}
+          HRS=${{ steps.cfg.outputs.window_hours }}
+          SINCE=$(date -u -d "${HRS} hours ago" +%Y-%m-%dT%H:%M:%SZ)
+          COUNT=$(gh api -X GET "repos/${REPO}/actions/workflows/spec-ai-review.yml/runs" \
+            -f status=completed --paginate \
+            --jq "[.workflow_runs[] | select(.created_at >= \"${SINCE}\")] | length" \
+            2>/dev/null | awk '{s+=$1} END {print s+0}')
+          echo "Recent ${HRS}h runs: ${COUNT} / cap ${MAX}"
+          if [ "${COUNT}" -ge "${MAX}" ]; then
+            echo "::warning::spec-ai-review daily cap reached (${COUNT}/${MAX}) — skipping this run."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          fi
+
   ai-spec-review:
     name: AI Spec Alignment Review
+    needs: cost-guard
+    if: needs.cost-guard.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

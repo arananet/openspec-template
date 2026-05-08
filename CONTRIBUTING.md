@@ -25,7 +25,7 @@ opening your first pull request.
 
 ```mermaid
 flowchart LR
-    A([Issue or idea]) --> B[Scaffold spec<br/>gh openspec scaffold or /openspec-scaffold]
+    A([Issue or idea]) --> B[Scaffold spec<br/>scripts/openspec scaffold or /openspec-scaffold]
     B --> C[Fill acceptance_criteria<br/>and test_plan]
     C --> D{status = review?}
     D -- No --> C
@@ -55,7 +55,7 @@ ls .openspec/specs/
 If none matches what you want to build, scaffold one:
 
 ```bash
-gh openspec scaffold "my feature"
+scripts/openspec scaffold "my feature"
 # or in Claude Code:
 /openspec-scaffold my feature
 ```
@@ -81,8 +81,8 @@ set), writes the code, and writes the tests in the same pass.
 ### 4. Validate locally
 
 ```bash
-gh openspec check            # spec coverage for current changes
-gh openspec check --strict   # treat warnings as errors
+scripts/openspec check            # spec coverage for current changes
+scripts/openspec check --strict   # treat warnings as errors
 # run your test command (configured in .openspec/config.yaml)
 ```
 

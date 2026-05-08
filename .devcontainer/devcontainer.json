@@ -3,8 +3,8 @@
   "image": "mcr.microsoft.com/devcontainers/universal:2",
 
   // Runs once when the Codespace or Dev Container is first created.
-  // Installs git hooks AND the gh-openspec extension so the repo is
-  // turn-key from the first boot. setup.sh is idempotent — safe to re-run.
+  // Installs git hooks and makes scripts/openspec executable.
+  // No external dependencies — bash + coreutils + git only.
   "postCreateCommand": "bash setup.sh",
 
   "customizations": {

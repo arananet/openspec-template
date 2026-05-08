@@ -15,59 +15,82 @@ grep -c '{{' .openspec/config.yaml 2>/dev/null && echo "STATUS: NOT_CONFIGURED" 
 
 ## First-Time Setup (AI-Guided Onboarding)
 
-This project was created with OpenSpec enforcement, but `.openspec/config.yaml`
-still has placeholder values that need to be filled in.
+This project was created from the OpenSpec template. `.openspec/config.yaml`
+still has `{{PLACEHOLDER}}` tokens, and `README.md` is a starter shell
+that needs to become the **user's** project README. Your job is to drive
+both, **interactively**, before anything else.
 
-**Step 0 — Verify the gh-openspec CLI extension is installed:**
+**Onboarding is a conversation — not a batch job.** Use the
+`AskUserQuestion` tool one question (or one tight group) at a time.
+Confirm answers before writing files. Do not invent values.
+
+---
+
+**Step 0 — Make sure the local OpenSpec CLI is executable:**
 
 ```bash
-gh extension list 2>/dev/null | grep -q 'arananet/gh-openspec' \
-  || gh extension install arananet/gh-openspec
+chmod +x scripts/openspec && scripts/openspec --help >/dev/null
 ```
 
-The template's CLAUDE/README workflow assumes `gh openspec` is on PATH.
-`bash setup.sh` installs it automatically; if you're skipping setup.sh,
-install it manually before scaffolding any spec.
+The template ships a self-contained `scripts/openspec` (bash + coreutils
++ git only — no `gh` extension, no Python, no yq).
 
-**Step 1 — Read the question schema and personal defaults:**
-Read `.openspec/onboarding.yaml` and `.openspec/defaults.yaml`.
-Any field already set in `defaults.yaml` (non-empty, non-placeholder) can be
-skipped in the interview — use that value directly in `config.yaml`.
+**Step 1 — Load defaults and the question schema:**
 
-**Step 2 — Interview the user:**
-Ask each `required: true` question that is not already answered in `defaults.yaml`.
-For `required: false` questions, show the default and let the user accept or change it.
+Read `.openspec/onboarding.yaml` and `.openspec/defaults.yaml`. Any field
+already set in `defaults.yaml` (non-empty, non-placeholder) skips its
+question — use that value directly. Show the user which defaults are
+being applied so they can override.
+
+**Step 2 — Interview the user, one question at a time:**
+
+For each `required: true` question not pre-answered:
+1. Ask via `AskUserQuestion` (with options when the schema gives them).
+2. Wait for the answer before asking the next.
+3. After the last required question, summarise every answer in a table
+   and ask: *"Apply these to the project?"* Only proceed on yes.
+
+For `required: false` questions, show the default and let the user
+accept it or supply a different value.
 
 **Step 3 — Write the config:**
-Edit `.openspec/config.yaml`, replacing each `{{PLACEHOLDER}}` token with the
-user's answer. For boolean fields, write `true` or `false` (no quotes).
 
-**Step 4 — Scaffold the first spec (if the user named a feature):**
+Edit `.openspec/config.yaml`, replacing each `{{PLACEHOLDER}}` token
+with the confirmed answer. For boolean fields, write `true` or `false`
+(no quotes). Do not touch lines without a placeholder.
+
+**Step 4 — Customise `README.md` (this is what the user will see first):**
+
+The shipped `README.md` is a slim starter. Replace its placeholders with
+the user's project details — do **not** restore the long OpenSpec
+section that older versions had. Specifically:
+
+- Replace `{{PROJECT_NAME}}`, `{{PROJECT_DESCRIPTION}}`, `{{GITHUB_OWNER}}`,
+  `{{TEST_COMMAND}}`, `{{BADGES}}` (generate from `tech_stack`, see badge
+  catalog further down).
+- Edit the `## Quick start` block so the install/run steps match the
+  user's actual stack (Python? Node? Go? Docker?).
+- Edit the `## Usage` section to show **one minimal example** of the
+  user's project doing its job. If the user doesn't have one yet, leave
+  the `<!-- TODO -->` line and tell them to fill it after the first
+  feature ships.
+- Leave the OpenSpec link block alone — it points to `docs/OPENSPEC.md`
+  which carries all the framework-specific detail.
+
+**Step 5 — Scaffold the first spec (if the user named one):**
+
 ```bash
-gh openspec scaffold "<feature-name>"
+scripts/openspec scaffold "<feature-name>"
 ```
-Show the user the created file and offer to help fill in `acceptance_criteria`.
 
-**Step 5 — Confirm setup is complete:**
-```bash
-grep -c '{{' .openspec/config.yaml
-```
-If output is `0`, configuration is complete. Tell the user:
-> "OpenSpec is configured. Run `bash setup.sh` to install git hooks.
->  After that, any commit touching source files will require a spec."
+Walk the user through `description`, `acceptance_criteria` (≥1), and
+`test_plan` (≥1) interactively — same one-question-at-a-time approach.
+Set `status: review` only after all three are non-trivial.
 
-**Step 6 — Create or update README.md and substitute placeholders in governance files:**
+**Step 6 — Substitute placeholders across governance files and generate badges:**
 
-After configuration is complete:
-
-1. Create or update `README.md` with:
-   - Project name and description (from `config.yaml`)
-   - How to install/run the project
-   - How OpenSpec works in this repo (brief overview)
-   - Link to `.openspec/` for spec details
-
-2. Substitute placeholders across the governance files shipped with this
-   template. A single find-and-replace per token covers every file:
+`README.md` was customised in Step 4 — for the **other** files shipped
+with the template, do a single find-and-replace per token:
 
    | Token | Replace with | Files |
    |---|---|---|
@@ -148,8 +171,23 @@ After configuration is complete:
    codebase grows. Default ownership is the team from `{{TEAM_NAME}}`.
 
 5. Point the user to `docs/BRANCH_PROTECTION.md` to configure required
-   status checks (OpenSpec PR Check, CodeQL, gitleaks, dependency-review)
-   on the default branch.
+   status checks (OpenSpec PR Check, Lint, CodeQL, gitleaks,
+   dependency-review, OSSF Scorecard, DCO, Doc drift) on the default
+   branch.
+
+**Step 7 — Confirm setup is complete:**
+
+```bash
+grep -c '{{' .openspec/config.yaml
+```
+
+If output is `0`, configuration is complete. Run `scripts/openspec check`
+to validate any specs that exist, then tell the user:
+
+> "OpenSpec is configured. `README.md` now describes your project.
+>  Run `bash setup.sh` if you haven't — it installs the git hooks that
+>  gate commits without specs. The full OpenSpec workflow lives in
+>  `docs/OPENSPEC.md`."
 
 Do not write any production code until the config has no `{{` tokens.
 
@@ -168,7 +206,7 @@ When the user asks you to implement something new:
 
 2. **If no spec exists — create one first:**
    ```bash
-   gh openspec scaffold "<feature-name>"
+   scripts/openspec scaffold "<feature-name>"
    # or in Claude Code:
    /openspec-scaffold <feature-name>
    ```
@@ -232,9 +270,9 @@ gh pr list --search "Fixes #<n>" --state open
 ## Validating Spec Coverage
 
 ```bash
-gh openspec check           # validate all specs in this repo
-gh openspec check --strict  # treat warnings as errors
-gh openspec check --pr 42   # check spec coverage for PR #42
+scripts/openspec check           # validate all specs in this repo
+scripts/openspec check --strict  # treat warnings as errors
+scripts/openspec check --pr 42   # check spec coverage for PR #42
 ```
 
 ---
@@ -242,8 +280,8 @@ gh openspec check --pr 42   # check spec coverage for PR #42
 ## Scaffolding a New Spec Manually
 
 ```bash
-gh openspec scaffold "user authentication"         # feature spec
-gh openspec scaffold "fix login crash" --type bugfix  # bugfix spec
+scripts/openspec scaffold "user authentication"         # feature spec
+scripts/openspec scaffold "fix login crash" --type bugfix  # bugfix spec
 ```
 
 Spec files are created at `.openspec/specs/<slug>.spec.yaml`.

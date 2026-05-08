@@ -6,10 +6,15 @@ body:
   - type: markdown
     attributes:
       value: |
-        This project uses [OpenSpec](../../blob/main/.openspec/) — every feature
-        begins as a spec file before code is written. Use this form to describe
-        the idea; a maintainer will work with you to turn it into a spec if it's
-        accepted.
+        This project uses [OpenSpec](../../blob/main/docs/OPENSPEC.md) — every
+        feature begins as a spec file before code is written. Use this form to
+        describe the idea; a maintainer will work with you to turn it into a
+        spec if it's accepted.
+
+        > **Maintainers:** for small, well-scoped enhancements you can apply
+        > the `agent:autofix` label after triage to have the
+        > [issue-autofix agent](../../blob/main/.github/agents/issue-autofix.md)
+        > draft the spec + code + tests as a draft PR. CODEOWNER-only.
 
   - type: textarea
     id: problem

@@ -98,7 +98,7 @@ ls .openspec/specs/
   needed but keep the slug.
 - If no spec exists, scaffold one:
   ```bash
-  gh openspec scaffold "<short-feature-name>"
+  scripts/openspec scaffold "<short-feature-name>"
   ```
   Then fill in `description`, `acceptance_criteria` (≥1), `test_plan` (≥1
   per AC where possible), and set `status: review`.
