@@ -136,6 +136,12 @@ Three project skills are available in any Claude Code session:
 │   ├── spec-ai-review.yml       # Agentic semantic review
 │   ├── spec-bootstrap.yml       # First-push setup reminder
 │   ├── issue-autofix.yml        # CODEOWNER-gated issue auto-fix agent
+│   ├── lint.yml                 # actionlint, yamllint, shellcheck, markdownlint
+│   ├── release.yml              # Tag → SBOM + cosign sign + SLSA provenance
+│   ├── scorecard.yml            # OSSF Scorecard supply-chain analysis
+│   ├── dependabot-automerge.yml # Auto-merge Dependabot patch updates
+│   ├── template-smoke-test.yml  # Weekly E2E test of the template itself
+│   ├── dco.yml                  # Developer Certificate of Origin check
 │   ├── repo-init.yml            # Creates `main` branch on new repos from template
 │   ├── codeql.yml               # Static analysis (SAST)
 │   ├── secret-scan.yml          # Gitleaks secret scanning
@@ -248,6 +254,26 @@ eval_plan:
 ```
 
 The spec says *what* must be validated. The harness says *how* that validation is executed.
+
+---
+
+## Production checklist
+
+Before a fork goes live, verify each item below. The template ships
+sensible defaults but a few things are repo-level and need a human.
+
+- [ ] `.openspec/config.yaml` has no `{{PLACEHOLDER}}` tokens
+- [ ] `bash setup.sh` ran (installs git hooks **and** the [`gh openspec`](https://github.com/arananet/gh-openspec) extension)
+- [ ] `gh openspec --help` works locally
+- [ ] `.github/CODEOWNERS` lists real users / teams (no `{{TEAM_NAME}}`)
+- [ ] Branch protection applied per [`docs/BRANCH_PROTECTION.md`](docs/BRANCH_PROTECTION.md)
+- [ ] Required checks include `Lint`, `OSSF Scorecard analysis`, `DCO`
+- [ ] **Settings → General → Allow auto-merge** enabled (so Dependabot patch auto-merge works)
+- [ ] First Scorecard run is green (or you've triaged the findings)
+- [ ] Labels synced: `yq '.[] | "gh label create \"" + .name + "\" --color \"" + .color + "\" --description \"" + .description + "\" --force"' .github/labels.yml | sh`
+- [ ] Decided on commit-identity policy: DCO (default), signed commits, or both
+- [ ] If enabling the issue-autofix agent: reviewed the security model and flipped `agents.issue_autofix.enabled: true`
+- [ ] Cut a `v0.0.1` tag and confirm `release.yml` produces a signed release with SBOM + provenance
 
 ---
 

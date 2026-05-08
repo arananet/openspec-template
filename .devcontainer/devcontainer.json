@@ -3,8 +3,9 @@
   "image": "mcr.microsoft.com/devcontainers/universal:2",
 
   // Runs once when the Codespace or Dev Container is first created.
-  // Installs git hooks so OpenSpec enforcement is active from the first commit.
-  "postCreateCommand": "bash setup.sh && echo '✓ OpenSpec git hooks installed'",
+  // Installs git hooks AND the gh-openspec extension so the repo is
+  // turn-key from the first boot. setup.sh is idempotent — safe to re-run.
+  "postCreateCommand": "bash setup.sh",
 
   "customizations": {
     "vscode": {

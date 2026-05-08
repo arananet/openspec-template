@@ -19,9 +19,15 @@ All of the following must pass before a PR can merge:
 - `OpenSpec PR Check / Validate Spec Coverage`
 - `OpenSpec PR Check / Run Tests` *(when `ci.run_tests: true`)*
 - `OpenSpec AI Review / AI Spec Alignment Review`
+- `Lint / actionlint (workflow YAML)`
+- `Lint / yamllint (all YAML)`
+- `Lint / shellcheck (shell scripts)`
+- `Lint / markdownlint`
 - `CodeQL / Analyze (<language>)` — one per language in the matrix
 - `Secret Scan / Gitleaks`
 - `Dependency Review / Review new dependencies`
+- `OSSF Scorecard / Scorecard analysis` *(weekly, also blocks on schedule misses)*
+- `DCO / DCO check` *(or signed-commits — see "Commit identity" below)*
 - Any language-specific build / lint checks added by your team
 
 Enable **Require branches to be up to date before merging** so checks always
@@ -39,10 +45,27 @@ run against the current base.
 ### History and merge hygiene
 
 - **Require linear history:** yes *(forbids merge commits on `main`)*
-- **Require signed commits:** yes *(protects against spoofed authorship; see
-  [GitHub's guide to signing commits](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits))*
 - **Require deployments to succeed:** only if you have environment gates
 - **Lock branch:** no *(only on release branches if you use them)*
+
+### Commit identity (pick one — DCO is the default)
+
+Two compatible options. Pick one; you can also enable both.
+
+**A. DCO (default — shipped with the template)**
+- The `DCO` workflow (`.github/workflows/dco.yml`) checks every PR commit
+  for a `Signed-off-by:` trailer matching the author.
+- Contributors sign off with `git commit -s`.
+- Lightweight, no key management, OSS-standard.
+- Add `DCO / DCO check` as a required status check above.
+
+**B. Signed commits (stricter — opt-in)**
+- Settings → Rules → enable **Require signed commits**.
+- Protects against spoofed authorship; requires GPG/SSH key setup per
+  contributor. See [GitHub's guide](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits).
+- Higher contributor friction but cryptographic guarantee.
+
+Option B can be layered on top of A for high-trust projects.
 
 ### Force pushes and deletions
 

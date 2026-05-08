@@ -18,6 +18,17 @@ grep -c '{{' .openspec/config.yaml 2>/dev/null && echo "STATUS: NOT_CONFIGURED" 
 This project was created with OpenSpec enforcement, but `.openspec/config.yaml`
 still has placeholder values that need to be filled in.
 
+**Step 0 — Verify the gh-openspec CLI extension is installed:**
+
+```bash
+gh extension list 2>/dev/null | grep -q 'arananet/gh-openspec' \
+  || gh extension install arananet/gh-openspec
+```
+
+The template's CLAUDE/README workflow assumes `gh openspec` is on PATH.
+`bash setup.sh` installs it automatically; if you're skipping setup.sh,
+install it manually before scaffolding any spec.
+
 **Step 1 — Read the question schema and personal defaults:**
 Read `.openspec/onboarding.yaml` and `.openspec/defaults.yaml`.
 Any field already set in `defaults.yaml` (non-empty, non-placeholder) can be
