@@ -1,0 +1,342 @@
+name: Issue Auto-Fix
+
+# Agentic workflow — when a CODEOWNER labels an issue with `agent:autofix`,
+# spawn an agent that opens a DRAFT pull request fixing the issue.
+#
+# Security model (see .openspec/specs/issue-autofix.spec.yaml):
+#   1. Only CODEOWNERS can trigger a run (label-applier is verified).
+#   2. The agent always opens a DRAFT PR — never pushes to default,
+#      never marks ready-for-review.
+#   3. Sensitive paths (workflows, CODEOWNERS, security configs) are
+#      blocked unless the issue body opts in AND a second CODEOWNER
+#      co-signs via comment.
+#   4. Hard caps on changed files / diff lines bound the blast radius.
+#   5. Existing CodeQL / gitleaks / dependency-review / spec-check
+#      workflows gate the agent's PR exactly like a human PR.
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number to auto-fix"
+        required: true
+        type: number
+
+permissions: read-all
+
+concurrency:
+  group: issue-autofix-${{ github.event.issue.number || inputs.issue_number }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Preflight (config + label match)
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    outputs:
+      enabled: ${{ steps.cfg.outputs.enabled }}
+      label: ${{ steps.cfg.outputs.label }}
+      model: ${{ steps.cfg.outputs.model }}
+      goal_file: ${{ steps.cfg.outputs.goal_file }}
+      max_changed_files: ${{ steps.cfg.outputs.max_changed_files }}
+      max_diff_lines: ${{ steps.cfg.outputs.max_diff_lines }}
+      sensitive_paths: ${{ steps.cfg.outputs.sensitive_paths }}
+      should_run: ${{ steps.gate.outputs.should_run }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq \
+            https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Read agents.issue_autofix config
+        id: cfg
+        run: |
+          set -euo pipefail
+          CFG=.openspec/config.yaml
+          if [ ! -f "$CFG" ]; then
+            echo "::warning::$CFG not found — feature disabled"
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          enabled=$(yq '.agents.issue_autofix.enabled // false' "$CFG")
+          label=$(yq '.agents.issue_autofix.label // "agent:autofix"' "$CFG")
+          model=$(yq '.agents.issue_autofix.model // "anthropic/claude-sonnet-4-6"' "$CFG")
+          goal=$(yq '.agents.issue_autofix.goal_file // ".github/agents/issue-autofix.md"' "$CFG")
+          maxf=$(yq '.agents.issue_autofix.max_changed_files // 20' "$CFG")
+          maxl=$(yq '.agents.issue_autofix.max_diff_lines // 500' "$CFG")
+          sens=$(yq -o=json '.agents.issue_autofix.sensitive_paths // []' "$CFG" | tr -d '\n')
+          {
+            echo "enabled=$enabled"
+            echo "label=$label"
+            echo "model=$model"
+            echo "goal_file=$goal"
+            echo "max_changed_files=$maxf"
+            echo "max_diff_lines=$maxl"
+            echo "sensitive_paths=$sens"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Decide whether to run
+        id: gate
+        env:
+          ENABLED: ${{ steps.cfg.outputs.enabled }}
+          CONFIGURED_LABEL: ${{ steps.cfg.outputs.label }}
+          EVENT_LABEL: ${{ github.event.label.name }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$ENABLED" != "true" ]; then
+            echo "Feature disabled in .openspec/config.yaml — skipping."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$EVENT_LABEL" != "$CONFIGURED_LABEL" ]; then
+            echo "Label '$EVENT_LABEL' does not match configured trigger '$CONFIGURED_LABEL' — skipping."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "should_run=true" >> "$GITHUB_OUTPUT"
+
+  authorize:
+    name: Authorize (CODEOWNERS check)
+    needs: preflight
+    if: needs.preflight.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      authorized: ${{ steps.check.outputs.authorized }}
+      sensitive_ok: ${{ steps.sensitive.outputs.sensitive_ok }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Verify labeler is a CODEOWNER
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SENDER: ${{ github.event.sender.login }}
+          ISSUE: ${{ github.event.issue.number || inputs.issue_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ ! -f .github/CODEOWNERS ]; then
+            echo "::error::.github/CODEOWNERS not found — refusing to run unauthenticated"
+            echo "authorized=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Extract every @user / @org/team mention from CODEOWNERS (ignoring comments).
+          mapfile -t OWNERS < <(grep -vE '^\s*#' .github/CODEOWNERS \
+            | grep -oE '@[A-Za-z0-9_./-]+' | sort -u)
+
+          authorized=false
+          for entry in "${OWNERS[@]}"; do
+            handle="${entry#@}"
+            if [[ "$handle" == */* ]]; then
+              org="${handle%%/*}"
+              team="${handle##*/}"
+              # Skip placeholder team slugs.
+              if [[ "$org" == *"{{"* || "$team" == *"{{"* ]]; then continue; fi
+              status=$(gh api -i "orgs/$org/teams/$team/memberships/$SENDER" 2>/dev/null \
+                | head -n1 | awk '{print $2}' || true)
+              if [ "$status" = "200" ]; then
+                state=$(gh api "orgs/$org/teams/$team/memberships/$SENDER" --jq '.state' 2>/dev/null || true)
+                if [ "$state" = "active" ]; then authorized=true; break; fi
+              fi
+            else
+              if [[ "$handle" == *"{{"* ]]; then continue; fi
+              if [ "$handle" = "$SENDER" ]; then authorized=true; break; fi
+            fi
+          done
+
+          echo "authorized=$authorized" >> "$GITHUB_OUTPUT"
+
+          if [ "$authorized" != "true" ]; then
+            gh issue edit "$ISSUE" --remove-label "${{ needs.preflight.outputs.label }}" || true
+            gh issue comment "$ISSUE" --body "@$SENDER — the \`${{ needs.preflight.outputs.label }}\` label can only be applied by a CODEOWNER. The label has been removed and no agent run was started. If you believe this is in error, ask a maintainer listed in [CODEOWNERS](../blob/HEAD/.github/CODEOWNERS) to apply it on your behalf."
+            echo "Labeler $SENDER is not a CODEOWNER — exiting cleanly."
+          fi
+
+      - name: Verify two-key approval (only if issue body opts in)
+        id: sensitive
+        if: steps.check.outputs.authorized == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE: ${{ github.event.issue.number || inputs.issue_number }}
+          SENDER: ${{ github.event.sender.login }}
+        run: |
+          set -euo pipefail
+          BODY=$(gh issue view "$ISSUE" --json body --jq '.body // ""')
+          if ! grep -qF 'agent:autofix-allow-sensitive' <<<"$BODY"; then
+            echo "Issue body does not request sensitive-path access — strict mode."
+            echo "sensitive_ok=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Find a comment by a DIFFERENT CODEOWNER with the approval token.
+          mapfile -t APPROVERS < <(gh api "repos/${{ github.repository }}/issues/$ISSUE/comments" \
+            --jq '.[] | select(.body | contains("agent:autofix-approve-sensitive")) | .user.login' \
+            | sort -u)
+          ok=false
+          for u in "${APPROVERS[@]}"; do
+            [ "$u" = "$SENDER" ] && continue
+            # Re-use CODEOWNERS check for this approver — keep it simple: any non-labeler comment counts
+            # as approval if they're a CODEOWNER. We delegate the CODEOWNER check via a re-grep.
+            mapfile -t OWNERS < <(grep -vE '^\s*#' .github/CODEOWNERS | grep -oE '@[A-Za-z0-9_./-]+' | sort -u)
+            for entry in "${OWNERS[@]}"; do
+              handle="${entry#@}"
+              if [[ "$handle" == */* ]]; then
+                org="${handle%%/*}"; team="${handle##*/}"
+                [[ "$org" == *"{{"* || "$team" == *"{{"* ]] && continue
+                state=$(gh api "orgs/$org/teams/$team/memberships/$u" --jq '.state' 2>/dev/null || true)
+                [ "$state" = "active" ] && ok=true && break
+              else
+                [[ "$handle" == *"{{"* ]] && continue
+                [ "$handle" = "$u" ] && ok=true && break
+              fi
+            done
+            $ok && break
+          done
+          echo "sensitive_ok=$ok" >> "$GITHUB_OUTPUT"
+          if [ "$ok" != "true" ]; then
+            echo "Issue requested sensitive-path access but no second CODEOWNER has co-signed."
+          fi
+
+  agent:
+    name: Run autofix agent
+    needs: [preflight, authorize]
+    if: needs.authorize.outputs.authorized == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    env:
+      ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+      MAX_CHANGED_FILES: ${{ needs.preflight.outputs.max_changed_files }}
+      MAX_DIFF_LINES: ${{ needs.preflight.outputs.max_diff_lines }}
+      SENSITIVE_PATHS: ${{ needs.preflight.outputs.sensitive_paths }}
+      ALLOW_SENSITIVE: ${{ needs.authorize.outputs.sensitive_ok }}
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "issue-autofix-agent[bot]"
+          git config user.email "issue-autofix-agent@users.noreply.github.com"
+
+      - name: Create autofix branch
+        run: |
+          BRANCH="agent/autofix/issue-${ISSUE_NUMBER}"
+          git checkout -B "$BRANCH"
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
+
+      - name: Fetch issue context
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue view "$ISSUE_NUMBER" --json title,body,labels,author > /tmp/issue.json
+          echo "Issue context written to /tmp/issue.json"
+
+      # Agentic workflow step — invokes the model with the goal file.
+      # The agent does the editing, committing, and pushing per its own goal file.
+      - name: Run autofix agent
+        uses: github/agentic-workflow@v1
+        with:
+          goal-file: ${{ needs.preflight.outputs.goal_file }}
+          model: ${{ needs.preflight.outputs.model }}
+          context: |
+            issue_number: ${{ env.ISSUE_NUMBER }}
+            issue_path: /tmp/issue.json
+            branch: ${{ env.BRANCH }}
+            max_changed_files: ${{ env.MAX_CHANGED_FILES }}
+            max_diff_lines: ${{ env.MAX_DIFF_LINES }}
+            sensitive_paths: ${{ env.SENSITIVE_PATHS }}
+            allow_sensitive_paths: ${{ env.ALLOW_SENSITIVE }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enforce hard size caps
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          BASE="${{ github.event.repository.default_branch }}"
+          git fetch origin "$BASE" --depth=1
+          CHANGED=$(git diff --name-only "origin/$BASE...HEAD" | wc -l | tr -d ' ')
+          LINES=$(git diff --shortstat "origin/$BASE...HEAD" \
+            | grep -oE '[0-9]+ insertion|[0-9]+ deletion' \
+            | awk '{s+=$1} END {print s+0}')
+          echo "Changed files: $CHANGED  | Diff lines: $LINES"
+          if [ "$CHANGED" -gt "$MAX_CHANGED_FILES" ] || [ "$LINES" -gt "$MAX_DIFF_LINES" ]; then
+            gh issue comment "$ISSUE_NUMBER" --body "Auto-fix aborted: proposed change is too large ($CHANGED files / $LINES lines, limits are $MAX_CHANGED_FILES / $MAX_DIFF_LINES). Please decompose the issue into smaller specs and re-label."
+            exit 1
+          fi
+
+      - name: Enforce sensitive-path policy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          BASE="${{ github.event.repository.default_branch }}"
+          git fetch origin "$BASE" --depth=1
+          mapfile -t CHANGED < <(git diff --name-only "origin/$BASE...HEAD")
+          # Read sensitive paths from env (JSON array)
+          mapfile -t PATTERNS < <(jq -r '.[]' <<<"$SENSITIVE_PATHS")
+          violated=()
+          for f in "${CHANGED[@]}"; do
+            for p in "${PATTERNS[@]}"; do
+              # Convert glob-ish ** to regex-friendly
+              regex="^${p//\*\*/.*}$"
+              regex="${regex//\*/[^/]*}"
+              if [[ "$f" =~ $regex ]]; then
+                violated+=("$f")
+                break
+              fi
+            done
+          done
+          if [ "${#violated[@]}" -gt 0 ] && [ "$ALLOW_SENSITIVE" != "true" ]; then
+            printf 'Auto-fix aborted: agent modified sensitive paths without two-key authorization.\n\nBlocked paths:\n%s\n' "$(printf -- '- `%s`\n' "${violated[@]}")" \
+              | gh issue comment "$ISSUE_NUMBER" --body-file -
+            exit 1
+          fi
+
+      - name: Push branch
+        run: |
+          git push -u origin "$BRANCH"
+
+      - name: Open draft pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TITLE=$(jq -r '.title' /tmp/issue.json)
+          # If the agent already opened the PR (per its goal file instructions), skip.
+          EXISTING=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            echo "PR #$EXISTING already exists for $BRANCH — skipping create."
+            exit 0
+          fi
+          gh pr create \
+            --draft \
+            --base "${{ github.event.repository.default_branch }}" \
+            --head "$BRANCH" \
+            --title "autofix: $TITLE" \
+            --body "$(printf 'Fixes #%s\n\n**This PR was opened by the issue-autofix agent. A human must review and mark it ready-for-review before merge.**\n\nSensitive-path access used: %s\n' "$ISSUE_NUMBER" "$ALLOW_SENSITIVE")"

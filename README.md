@@ -135,6 +135,7 @@ Three project skills are available in any Claude Code session:
 │   ├── spec-check.yml           # Deterministic CI gate + test runner
 │   ├── spec-ai-review.yml       # Agentic semantic review
 │   ├── spec-bootstrap.yml       # First-push setup reminder
+│   ├── issue-autofix.yml        # CODEOWNER-gated issue auto-fix agent
 │   ├── repo-init.yml            # Creates `main` branch on new repos from template
 │   ├── codeql.yml               # Static analysis (SAST)
 │   ├── secret-scan.yml          # Gitleaks secret scanning
@@ -149,7 +150,9 @@ Three project skills are available in any Claude Code session:
 │   ├── spec_question.yml
 │   └── config.yml
 ├── agents/
-│   └── spec-review.md           # AI agent goal file
+│   ├── spec-review.md           # AI agent goal file
+│   └── issue-autofix.md         # Auto-fix agent goal file
+├── labels.yml                   # Source-of-truth label manifest
 ├── CODEOWNERS                   # Ownership matrix
 ├── FUNDING.yml                  # Sponsor links
 ├── AGENTS.md                    # Instructions for AI agents
@@ -245,6 +248,48 @@ eval_plan:
 ```
 
 The spec says *what* must be validated. The harness says *how* that validation is executed.
+
+---
+
+## Issue Auto-Fix Agent (opt-in)
+
+This template ships with an opt-in agent that drafts a PR for you when a maintainer labels an issue. It is **disabled by default** — enable it deliberately once you've reviewed the security model.
+
+**How it works:**
+
+```mermaid
+flowchart LR
+    A([CODEOWNER labels issue<br/>with agent:autofix]) --> B{Authorized?}
+    B -- No --> C[Remove label<br/>+ comment, exit]
+    B -- Yes --> D[Agent reads issue<br/>+ scaffolds spec]
+    D --> E{Touches sensitive paths?}
+    E -- Yes, no two-key --> F[Abort + comment]
+    E -- No / authorized --> G[Write code + tests]
+    G --> H{Within size caps?}
+    H -- No --> F
+    H -- Yes --> I([Open DRAFT PR<br/>linking issue])
+    I --> J[CodeQL, gitleaks,<br/>spec-check, AI review]
+    J --> K[Human marks<br/>ready-for-review]
+```
+
+**Security guarantees:**
+
+| Guarantee | Mechanism |
+|---|---|
+| Only maintainers can trigger | `.github/CODEOWNERS` is parsed; non-owners get the label removed and an explanatory comment |
+| Always opens a **draft** PR | Workflow uses `gh pr create --draft`; agent is forbidden from marking ready-for-review |
+| Cannot edit CI / security configs by default | `agents.issue_autofix.sensitive_paths` blocks `.github/workflows/**`, `CODEOWNERS`, `SECURITY.md`, etc. |
+| Sensitive overrides need two CODEOWNERS | Issue body must contain `agent:autofix-allow-sensitive` AND a second CODEOWNER must comment `agent:autofix-approve-sensitive` |
+| Bounded blast radius | Hard caps on changed files (default 20) and diff lines (default 500) |
+| Same gates as a human PR | CodeQL, gitleaks, dependency-review, spec-check, and spec-ai-review all run on the agent's PR |
+
+**Enable it:**
+
+1. Edit `.openspec/config.yaml` → set `agents.issue_autofix.enabled: true`.
+2. Sync labels once: `yq '.[] | "gh label create \"" + .name + "\" --color \"" + .color + "\" --description \"" + .description + "\" --force"' .github/labels.yml | sh`.
+3. Apply the `agent:autofix` label to any issue you want the agent to draft a fix for.
+
+Read [`.openspec/specs/issue-autofix.spec.yaml`](.openspec/specs/issue-autofix.spec.yaml) and [`.github/agents/issue-autofix.md`](.github/agents/issue-autofix.md) before enabling.
 
 ---
 

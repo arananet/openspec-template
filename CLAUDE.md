@@ -193,6 +193,31 @@ When the user asks you to implement something new:
 
 ---
 
+## Issues already in flight with the auto-fix agent
+
+If the user asks you to work on an issue, first check whether the issue
+has the `agent:autofix` label (or whatever `agents.issue_autofix.label`
+is set to in `.openspec/config.yaml`). The repo's auto-fix workflow
+(`.github/workflows/issue-autofix.yml`) may already be running or have
+opened a draft PR for it.
+
+```bash
+gh issue view <n> --json labels,state
+gh pr list --search "Fixes #<n>" --state open
+```
+
+- If a draft PR already exists on `agent/autofix/issue-<n>` — review and
+  improve **that** branch instead of starting a parallel one. Do not
+  open a competing PR.
+- If the workflow is mid-run (an in-progress GitHub Actions run on the
+  branch), wait or coordinate with the user before pushing — your push
+  will collide with the agent's.
+- If the agent aborted (you'll see a comment naming the reason), read
+  the comment and treat its concern as a constraint on your own work
+  (e.g. don't blindly do the sensitive-path edit it refused to do).
+
+---
+
 ## Validating Spec Coverage
 
 ```bash
