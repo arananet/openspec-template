@@ -1,0 +1,120 @@
+name: License scan
+
+# Detects disallowed or unknown OSS licenses across the dependency tree
+# using ScanCode Toolkit (free, OSI-approved, used by the Linux Foundation).
+# Complements dependency-review.yml (vulns) and codeql.yml (code analysis).
+#
+# Configure allowed/denied licenses in `.licenses/policy.yaml` (see template).
+
+on:
+  pull_request:
+    paths:
+      - "**/package.json"
+      - "**/package-lock.json"
+      - "**/requirements*.txt"
+      - "**/pyproject.toml"
+      - "**/Pipfile*"
+      - "**/go.mod"
+      - "**/go.sum"
+      - "**/Cargo.toml"
+      - "**/Cargo.lock"
+      - "**/pom.xml"
+      - "**/build.gradle*"
+      - "**/Gemfile*"
+      - "**/composer.json"
+      - ".licenses/**"
+      - ".github/workflows/license-scan.yml"
+  schedule:
+    - cron: "0 6 * * 1"  # weekly Monday sweep
+  workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+  group: license-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: ScanCode license analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Python
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Install ScanCode Toolkit
+        run: pip install --no-cache-dir scancode-toolkit==32.3.0
+
+      - name: Run ScanCode (license + copyright facets)
+        run: |
+          mkdir -p .licenses/reports
+          scancode \
+            --license \
+            --copyright \
+            --license-references \
+            --json-pp .licenses/reports/scancode.json \
+            --csv      .licenses/reports/scancode.csv \
+            --processes 2 \
+            --strip-root \
+            .
+
+      - name: Enforce license policy
+        run: |
+          set -euo pipefail
+          POLICY=".licenses/policy.yaml"
+          REPORT=".licenses/reports/scancode.json"
+          if [ ! -f "$POLICY" ]; then
+            echo "::warning::No .licenses/policy.yaml found — skipping enforcement (report uploaded only)."
+            exit 0
+          fi
+          python - <<'PY'
+          import json, sys, re, pathlib
+          policy_text = pathlib.Path(".licenses/policy.yaml").read_text()
+          # very small parser: lines like "  - MIT" under denied:/allowed:
+          def section(name):
+              out, in_s = [], False
+              for line in policy_text.splitlines():
+                  stripped = line.strip()
+                  if stripped.startswith(name + ":"):
+                      in_s = True; continue
+                  if in_s and re.match(r"^[a-zA-Z_]+:", line):
+                      in_s = False
+                  if in_s and stripped.startswith("- "):
+                      out.append(stripped[2:].strip().lower())
+              return set(out)
+          denied  = section("denied")
+          allowed = section("allowed")
+          report  = json.loads(pathlib.Path(".licenses/reports/scancode.json").read_text())
+          violations = []
+          for f in report.get("files", []):
+              for lic in f.get("license_detections", []) or []:
+                  expr = (lic.get("license_expression") or "").lower()
+                  if any(d in expr for d in denied):
+                      violations.append((f["path"], expr))
+                      continue
+                  if allowed and not any(a in expr for a in allowed):
+                      violations.append((f["path"], f"unallowed: {expr}"))
+          if violations:
+              print("::error::License policy violations detected:")
+              for p, e in violations:
+                  print(f"  - {p}: {e}")
+              sys.exit(1)
+          print("License policy: OK")
+          PY
+
+      - name: Upload license report
+        if: always()
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: license-scan-report
+          path: .licenses/reports/
+          retention-days: 30

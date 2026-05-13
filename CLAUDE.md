@@ -175,8 +175,10 @@ with the template, do a single find-and-replace per token:
 
 5. Point the user to `docs/BRANCH_PROTECTION.md` to configure required
    status checks (OpenSpec PR Check, Lint, CodeQL, gitleaks,
-   dependency-review, OSSF Scorecard, DCO, Doc drift) on the default
-   branch.
+   dependency-review, OSSF Scorecard, DCO, Doc drift, ScanCode license
+   analysis, Run tests) on the default branch. For one-command setup
+   they can run `make apply-branch-protection` (requires `gh` CLI and
+   admin rights on the repo).
 
 6. **Clean up template-internal specs.** Run `bash scripts/cleanup-template-specs`
    (or `make cleanup-template-specs`) to remove the design specs that

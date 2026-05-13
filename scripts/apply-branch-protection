@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# apply-branch-protection — push the default-branch ruleset to GitHub.
+#
+# Requires: gh CLI (https://cli.github.com), authenticated as a repo admin.
+# Usage:    bash scripts/apply-branch-protection [owner/repo]
+#           Defaults to the current repo (`gh repo view`).
+
+set -euo pipefail
+
+REPO="${1:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
+RULESET="docs/branch-protection-ruleset.json"
+
+if [ ! -f "$RULESET" ]; then
+  echo "error: $RULESET not found. Run from the repo root." >&2
+  exit 1
+fi
+
+echo "Applying ruleset to $REPO..."
+gh api \
+  --method POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  "/repos/${REPO}/rulesets" \
+  --input "$RULESET"
+
+echo ""
+echo "✓ Ruleset applied. View it at:"
+echo "  https://github.com/${REPO}/settings/rules"

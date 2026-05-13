@@ -1,0 +1,41 @@
+# License Policy
+#
+# Enforced by .github/workflows/license-scan.yml on every PR that touches
+# dependency manifests. ScanCode reports get uploaded as artifacts; this
+# file decides which licenses block a merge.
+#
+# Format: simple lists. Match is case-insensitive substring against the
+# SPDX-style license expression detected by ScanCode.
+#
+# allowed: if set, ANY license outside this list fails the build.
+# denied:  always fails, even if also in allowed.
+#
+# Edit to fit your org's IP policy. The defaults below are a permissive
+# OSI baseline suitable for most commercial products; tighten as needed.
+
+allowed:
+  - mit
+  - apache-2.0
+  - bsd-2-clause
+  - bsd-3-clause
+  - isc
+  - mpl-2.0
+  - cc0-1.0
+  - cc-by-4.0
+  - python-2.0
+  - unlicense
+  - zlib
+
+denied:
+  # Strong copyleft — risky for proprietary linking
+  - gpl-2.0
+  - gpl-3.0
+  - agpl-3.0
+  - sspl-1.0
+  - commons-clause
+  # Non-free / source-available
+  - bsl-1.1                # Business Source License
+  - elastic-license-2.0
+  # Unknown / undetected
+  - unknown-license
+  - proprietary

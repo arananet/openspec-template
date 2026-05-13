@@ -23,11 +23,19 @@ Guidelines:
 - `roles.default_*` block in `.openspec/config.yaml` and `.openspec/defaults.yaml` for repo-wide default role assignments
 - `scripts/openspec scaffold` now reads `roles.default_*` from config and pre-fills new specs
 - Onboarding interview (`.openspec/onboarding.yaml`) prompts for default implementer / reviewer / qa / product_owner
-- `Makefile` with convenience targets: `check`, `scaffold`, `scaffold-bug`, `test`, `status`, `setup`, `cleanup-template-specs`
+- `Makefile` with convenience targets: `check`, `scaffold`, `scaffold-bug`, `test`, `status`, `setup`, `cleanup-template-specs`, `apply-branch-protection`
 - `scripts/cleanup-template-specs` removes the template's internal design specs from a fresh fork
 - `.vscode/settings.json` and `.vscode/extensions.json` with YAML schemas, markdownlint config, and recommended extensions
 - `renovate.json.example` as an opt-in alternative to `dependabot.yml`
 - Spec lifecycle state diagram in [`docs/OPENSPEC.md`](docs/OPENSPEC.md)
+- **Enterprise hardening:**
+  - `.github/workflows/license-scan.yml` + `.licenses/policy.yaml` — ScanCode-based OSS license enforcement
+  - `.github/workflows/container-scan.yml` — Hadolint + Trivy scanning, auto-skips when no Dockerfile present
+  - `.github/workflows/spec-metrics.yml` — weekly DORA-style report on spec status, role coverage, PR→spec link rate
+  - `docs/branch-protection-ruleset.json` + `scripts/apply-branch-protection` — one-command branch protection bootstrap
+  - `SECRETS.md` — secrets-management policy with rotation cadences and incident response
+  - `scripts/openspec.ps1` — PowerShell port for Windows-native developers
+  - PR template extended with accessibility, privacy / data-handling, and security checklists
 - `CONTRIBUTING.md` documents the `roles` block in the spec workflow
 - `CLAUDE.md` Step 5 now instructs Claude to walk users through `roles` during scaffolding
 - `CLAUDE.md` Step 6 now instructs Claude to clean up template-internal specs

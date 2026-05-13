@@ -1,0 +1,51 @@
+{
+  "_help": "Branch protection ruleset for OpenSpec projects. Apply with `bash scripts/apply-branch-protection [owner/repo]` or import via Repo → Settings → Rules → Rulesets → Import. Edit required-check names if your org renames jobs.",
+  "name": "Default branch protection (OpenSpec)",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["~DEFAULT_BRANCH"],
+      "exclude": []
+    }
+  },
+  "bypass_actors": [],
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 2,
+        "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": true,
+        "require_last_push_approval": true,
+        "required_review_thread_resolution": true
+      }
+    },
+    {
+      "type": "required_signatures"
+    },
+    {
+      "type": "required_linear_history"
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "required_status_checks": [
+          { "context": "OpenSpec PR Check" },
+          { "context": "Lint" },
+          { "context": "DCO" },
+          { "context": "Doc drift" },
+          { "context": "CodeQL" },
+          { "context": "Dependency review" },
+          { "context": "Gitleaks" },
+          { "context": "OSSF Scorecard" },
+          { "context": "ScanCode license analysis" },
+          { "context": "Run tests" }
+        ]
+      }
+    }
+  ]
+}

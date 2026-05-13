@@ -1,0 +1,111 @@
+name: Spec metrics
+
+# Reports DORA-style metrics on the OpenSpec process:
+#   - Spec turnaround: draft → approved time
+#   - Coverage: % of merged PRs with a referenced spec
+#   - Role attribution: % of approved specs with all 4 roles filled
+#
+# Runs weekly and posts a summary to the workflow run. Surface it via a
+# repo dashboard or a Slack/Teams webhook by extending the final step.
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"  # Mondays 07:00 UTC
+  workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+  group: spec-metrics
+  cancel-in-progress: true
+
+jobs:
+  report:
+    name: Compute spec metrics
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Compute metrics
+        id: metrics
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p .metrics
+          SPECS_DIR=".openspec/specs"
+          REPORT=".metrics/spec-metrics.md"
+
+          total=0; draft=0; review=0; approved=0; missing_roles=0; multi_role=0
+          for f in "$SPECS_DIR"/*.spec.yaml; do
+            [ -f "$f" ] || continue
+            total=$((total + 1))
+            status=$(grep -E '^status:' "$f" | head -n1 | awk '{print $2}' | tr -d '"')
+            case "$status" in
+              draft)    draft=$((draft + 1)) ;;
+              review)   review=$((review + 1)) ;;
+              approved) approved=$((approved + 1)) ;;
+            esac
+            # crude role completeness check — looks for all 4 roles non-null
+            roles_filled=$(awk '/^roles:/,/^[a-z_]+:/' "$f" \
+              | grep -E '^[[:space:]]+(implementer|reviewer|qa|product_owner):' \
+              | grep -vE ':\s*(null|~|\s*)$' | wc -l | tr -d ' ')
+            if [ "$roles_filled" -ge 4 ]; then
+              multi_role=$((multi_role + 1))
+            else
+              missing_roles=$((missing_roles + 1))
+            fi
+          done
+
+          # Coverage on the last 30 days of merged PRs
+          since=$(date -u -d '30 days ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
+                 || date -u -v-30d +%Y-%m-%dT%H:%M:%SZ)
+          merged_prs=$(gh pr list --state merged --search "merged:>${since}" --limit 200 --json number,title,body | tee .metrics/prs.json)
+          pr_total=$(jq 'length' .metrics/prs.json)
+          pr_with_spec=$(jq '[.[] | select(.body | test("\\.openspec/specs/[a-z0-9-]+\\.spec\\.yaml"))] | length' .metrics/prs.json)
+          if [ "${pr_total:-0}" -gt 0 ]; then
+            coverage=$(awk -v a="$pr_with_spec" -v b="$pr_total" 'BEGIN{printf "%.1f", (a/b)*100}')
+          else
+            coverage="n/a"
+          fi
+
+          {
+            echo "# OpenSpec metrics"
+            echo
+            echo "_Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)_"
+            echo
+            echo "## Spec inventory"
+            echo "| Status | Count |"
+            echo "|---|---|"
+            echo "| Total | $total |"
+            echo "| draft | $draft |"
+            echo "| review | $review |"
+            echo "| approved | $approved |"
+            echo
+            echo "## Role coverage"
+            echo "| Roles filled | Count |"
+            echo "|---|---|"
+            echo "| All 4 roles set | $multi_role |"
+            echo "| Missing one or more | $missing_roles |"
+            echo
+            echo "## PR spec-link coverage (last 30 days)"
+            echo "- Merged PRs: $pr_total"
+            echo "- PRs referencing a spec: $pr_with_spec"
+            echo "- Coverage: ${coverage}%"
+          } > "$REPORT"
+
+          cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload metrics artifact
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: spec-metrics
+          path: .metrics/
+          retention-days: 90

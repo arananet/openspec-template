@@ -54,6 +54,33 @@ required check fails.
 - [ ] CHANGELOG.md updated under `[Unreleased]`
 - [ ] SECURITY.md / CONTRIBUTING.md updated (if governance changed)
 
+## Accessibility (a11y)
+
+<!-- Skip if PR has no UI surface. Otherwise check each item. -->
+
+- [ ] No UI changes (skip the rest), OR
+- [ ] Interactive elements are keyboard-navigable (Tab / Shift+Tab / Enter / Esc)
+- [ ] Color contrast meets WCAG 2.2 AA (≥ 4.5:1 for body text)
+- [ ] All images, icons, and form controls have accessible names (`alt`, `aria-label`)
+- [ ] Focus order is logical; no focus traps
+- [ ] Tested with a screen reader (VoiceOver / NVDA / TalkBack) for new flows
+
+## Privacy / data handling
+
+- [ ] No new PII / PHI / PCI data is collected, stored, or logged
+- [ ] If data is collected: lawful basis is documented in the spec's `description`
+- [ ] No secrets, tokens, or credentials added to logs, telemetry, or error messages
+- [ ] Retention policy unchanged, OR documented in spec
+- [ ] Data subject rights (access / deletion / export) still honored if applicable
+
+## Security
+
+- [ ] Threat model unchanged, OR new risks documented in spec
+- [ ] Inputs at trust boundaries are validated and sanitized
+- [ ] No new outbound network calls without explicit allow-list / review
+- [ ] OWASP Top 10 considerations reviewed for changed code paths
+- [ ] See [SECRETS.md](../SECRETS.md) for credential handling rules
+
 ## Checklist
 
 - [ ] Spec file is included in this PR with status `review` or `approved`.
