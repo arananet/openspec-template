@@ -6,7 +6,7 @@ slug: "template-production-readiness"
 type: feature
 status: review
 
-author: "arananet"
+author: "Eduardo Arana"
 created_at: "2026-05-08"
 updated_at: "2026-05-08"
 
@@ -17,10 +17,10 @@ description: |
   closes the remaining production-grade gaps that any team forking the
   template would otherwise hit on day one:
 
-  1. The `gh openspec` extension (https://github.com/arananet/gh-openspec)
-     is referenced everywhere but never installed — so a fresh clone /
-     Codespace runs into "unknown command" the first time the user
-     follows the README. setup.sh and the devcontainer must install it.
+  1. The local `scripts/openspec` CLI (bash + coreutils + git only) is
+     the sole interface for spec operations — no external extensions
+     required. setup.sh makes it executable and the devcontainer runs
+     it via `postCreateCommand`.
 
   2. There is no CI lint for the workflows themselves — pre-commit covers
      contributors who opted in, but a bad PR can still merge a broken
@@ -55,8 +55,8 @@ description: |
   for anything that costs compute or surface noise on a fresh fork.
 
 acceptance_criteria:
-  - "`setup.sh` installs the `arananet/gh-openspec` extension via `gh extension install` (idempotent — skips if already installed) and prints a clear message if `gh` is missing"
-  - "`.devcontainer/devcontainer.json` runs `gh extension install arananet/gh-openspec --force` in `postCreateCommand` so Codespaces are turn-key from the first boot"
+  - "`setup.sh` makes `scripts/openspec` executable and installs git hooks. No external extensions or `gh` CLI required for non-CI use"
+  - "`.devcontainer/devcontainer.json` runs `bash setup.sh` in `postCreateCommand` so Codespaces are turn-key from the first boot — no network dependency on external extensions"
   - "A new `.github/workflows/lint.yml` runs on every PR with four jobs (actionlint, yamllint, shellcheck, markdownlint) using SHA-pinned actions and finishes in under 3 minutes on a typical PR"
   - "`lint.yml` declares `permissions: read-all` and never grants any write permission to any job (lint is read-only)"
   - "A new `.github/workflows/release.yml` triggers on `push: tags: ['v*']` and `workflow_dispatch`, generates a CycloneDX SBOM, builds a `source.tar.gz` of the tagged commit, signs both with keyless cosign (`id-token: write` only), produces SLSA build provenance via `actions/attest-build-provenance`, and uploads everything as release assets via `softprops/action-gh-release`"
@@ -68,7 +68,7 @@ acceptance_criteria:
   - "A new `.github/workflows/dco.yml` checks every PR commit for a `Signed-off-by:` trailer matching the author. Failures are reported as PR check failures with a remediation comment that explains `git commit -s --amend`"
   - "`docs/BRANCH_PROTECTION.md` is updated with a table of the new required checks (`Lint`, `OSSF Scorecard analysis`, `DCO`) and a note about choosing DCO vs commit signing"
   - "README.md gains a 'Production checklist' section listing every check a downstream maintainer should enable before going live (config filled, hooks installed, branch protection applied, scorecard reviewed)"
-  - "CLAUDE.md mentions the gh-openspec extension prerequisite under 'First-Time Setup' so Claude installs it during onboarding if missing"
+  - "CLAUDE.md Step 0 points to `scripts/openspec --help` as the local CLI — no external extension prerequisite"
 
 test_plan:
   - "Unit (yamllint): every new workflow parses cleanly under the project's `.yamllint` rules"
@@ -76,12 +76,12 @@ test_plan:
   - "Unit (grep): every new workflow declares `permissions: read-all` at the top"
   - "Unit (grep): `release.yml` requests `id-token: write` only on the cosign / attestation step's job, not at the workflow level"
   - "Unit (grep): `dependabot-automerge.yml` does not auto-merge `version-update:semver-major` or `version-update:semver-minor` updates"
-  - "Unit (shellcheck): the new shell logic in `setup.sh` for installing gh-openspec passes shellcheck with no errors"
+  - "Unit (shellcheck): `setup.sh` and `scripts/openspec` pass shellcheck with no errors"
   - "Integration (manual on a fork): tag `v0.0.1-test`, confirm `release.yml` produces an SBOM, signed checksums, and a SLSA provenance attestation; verify with `cosign verify-blob`"
   - "Integration (manual on a fork): merge a Dependabot patch PR — confirm auto-merge fires only after required checks pass"
   - "Integration (manual on a fork): open a PR without `Signed-off-by:` — confirm DCO check fails and the remediation comment appears"
   - "Integration (cron): wait for the first `template-smoke-test.yml` run and confirm green; introduce a deliberate breakage (e.g. typo in setup.sh) on a branch and confirm the smoke test catches it"
-  - "Manual: open a fresh Codespace from the template and confirm `gh openspec --help` works without any extra steps"
+  - "Manual: open a fresh Codespace from the template and confirm `scripts/openspec --help` works without any extra steps"
 
 qa_notes: |
   Cosign keyless signing requires `id-token: write` on the GitHub OIDC

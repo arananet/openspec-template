@@ -6,7 +6,7 @@ slug: "template-completeness"
 type: feature
 status: review
 
-author: "arananet"
+author: "Eduardo Arana"
 created_at: "2026-04-15"
 updated_at: "2026-04-15"  # updated: added implementation_skill ACs and skills/hooks criteria
 

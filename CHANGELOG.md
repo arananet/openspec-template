@@ -19,7 +19,7 @@ Guidelines:
 ## [Unreleased]
 
 ### Added
--
+- Roles section in spec templates (`implementer`, `reviewer`, `qa`, `product_owner`) for per-spec responsibility assignment
 
 ### Changed
 -

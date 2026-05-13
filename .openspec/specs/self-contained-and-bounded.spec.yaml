@@ -1,5 +1,5 @@
 # Feature Spec — self-contained-and-bounded
-# Removes the external gh-openspec dependency and closes remaining
+# Makes the template fully self-contained and closes remaining
 # audit gaps (cost guards, doc-drift enforcement, agent-instruction
 # parity). Status must reach 'review' before any production code.
 
@@ -8,20 +8,17 @@ slug: "self-contained-and-bounded"
 type: feature
 status: review
 
-author: "arananet"
+author: "Eduardo Arana"
 created_at: "2026-05-08"
 updated_at: "2026-05-08"
 
 description: |
   Closes the remaining production-readiness gaps surfaced in the audit:
 
-  1. **Remove the gh-openspec extension dependency.**
-     Today the template assumes `gh extension install arananet/gh-openspec`
-     succeeds and the resulting subcommand is on PATH. That couples the
-     template to an external repo's release cadence and breaks the
-     "fork-and-go" promise. Replace with a local `scripts/openspec`
-     POSIX-shell CLI that has zero external dependencies (bash + coreutils
-     + git only — no yq, jq, python).
+  1. **Self-contained local CLI.**
+     The template ships a local `scripts/openspec` POSIX-shell CLI
+     that has zero external dependencies (bash + coreutils + git only —
+     no yq, jq, python). No extension installs required.
 
   2. **Cap agent costs per day.**
      `spec-ai-review.yml` and `issue-autofix.yml` consume model tokens
@@ -52,29 +49,29 @@ description: |
      `feature_request.yml` config sections.
 
 acceptance_criteria:
-  - "A new `scripts/openspec` exists, is executable, depends only on bash + coreutils + git (no yq, jq, python, or gh-extension), and supports subcommands: `scaffold <name> [--type bugfix|feature]`, `check [--strict] [--pr <n>]`, `init`, `--help`"
+  - "A new `scripts/openspec` exists, is executable, depends only on bash + coreutils + git (no yq, jq, python, or external extensions), and supports subcommands: `scaffold <name> [--type bugfix|feature]`, `check [--strict] [--pr <n>]`, `init`, `--help`"
   - "`scripts/openspec scaffold` reads `.openspec/templates/{feature,bugfix}.spec.yaml`, slugifies the name, substitutes `{{FEATURE_NAME}}`, `{{SLUG}}`, `{{STATUS}}`, `{{AUTHOR}}` (from `git config user.name` or `$USER`), `{{DATE}}` (ISO `YYYY-MM-DD`), and writes to `.openspec/specs/<slug>.spec.yaml`. Refuses to overwrite an existing file unless `--force` is passed"
   - "`scripts/openspec check` validates every `*.spec.yaml` under `.openspec/specs/` for: required fields, valid status (draft|review|approved), at least 1 acceptance_criteria item, at least 1 test_plan item. Exits 0 on success, 1 on any failure. `--strict` treats `draft` status as a failure"
-  - "`setup.sh` no longer installs the gh-openspec extension and no longer requires `gh` for non-CI use. Setup succeeds on a machine without `gh` installed"
-  - "`.devcontainer/devcontainer.json` does not invoke `gh extension install` and Codespaces work end-to-end without internet access to `arananet/gh-openspec`"
-  - "Every reference to `gh openspec <subcommand>` in markdown, workflow, hook, template, and config file is replaced with `./scripts/openspec <subcommand>` (verified via repo-wide grep returning zero matches for `gh openspec`)"
+  - "`setup.sh` does not install any external extensions and does not require `gh` for non-CI use. Setup succeeds on a machine without `gh` installed"
+  - "`.devcontainer/devcontainer.json` does not invoke any extension installs and Codespaces work end-to-end without network access to external repos"
+  - "Every reference to external CLI subcommands in markdown, workflow, hook, template, and config file uses `./scripts/openspec <subcommand>` (verified via repo-wide grep)"
   - "A new `.github/workflows/doc-drift.yml` runs on PRs and fails when changed source files (`*.py|*.ts|*.js|*.tsx|*.jsx|*.go|*.java|*.rb|*.rs|*.cpp|*.c|*.cs|*.swift|*.kt|*.php`) are present without a corresponding change to `README.md`, `CHANGELOG.md`, or any file under `docs/`. The check is bypassed when the PR carries the `skip-doc-drift` label"
   - "`doc-drift.yml` skips PRs whose diff is dependency-manifest-only (`package*.json`, `*.lock`, `requirements*.txt`, `pyproject.toml`, `go.mod`, `go.sum`, `Cargo.toml`, `Cargo.lock`, `Gemfile*`, `composer.*`) so Dependabot PRs do not need doc updates"
   - "`spec-ai-review.yml` runs a `cost_guard` preflight job before invoking the agent: reads `agents.spec_review.cost_guard.daily_max_runs` (default 50) from `.openspec/config.yaml`, queries the workflow's last-24h run count via `gh api`, and exits 0 (skip) with a `::warning::` annotation when the cap is reached"
   - "`issue-autofix.yml` runs an analogous `cost_guard` preflight: reads `agents.issue_autofix.cost_guard.daily_max_runs` (default 10), counts last-24h runs, and on cap exhaustion removes the trigger label, comments on the issue explaining the daily cap, and exits cleanly"
   - "`.openspec/config.yaml` gains `agents.spec_review.cost_guard` and `agents.issue_autofix.cost_guard` blocks with `enabled: true`, `daily_max_runs: <int>`, and `window_hours: 24`. Defaults are conservative and documented"
-  - "`.github/AGENTS.md` is rewritten to: refuse code generation without a matching spec, replace gh-openspec commands with `./scripts/openspec`, and explicitly mirror the four CLAUDE.md rules (status gate, test_plan gate, surgical changes, simplicity)"
+  - "`.github/AGENTS.md` is rewritten to: refuse code generation without a matching spec, use `./scripts/openspec` commands, and explicitly mirror the four CLAUDE.md rules (status gate, test_plan gate, surgical changes, simplicity)"
   - "`.github/copilot-instructions.md` is rewritten to mirror the same gates (with copilot-appropriate phrasing — Copilot autocompletes, it doesn't refuse, so the file emphasises 'suggest scaffolding the spec first')"
   - "`.github/ISSUE_TEMPLATE/bug_report.yml` and `feature_request.yml` include a markdown note at the top explaining that maintainers can apply the `agent:autofix` label to trigger the auto-fix agent (with a link to the agent's goal file)"
-  - "`README.md` 'Production checklist' is updated: removes the gh-openspec install line, adds doc-drift + cost-guard items, references the new local script"
-  - "`CLAUDE.md` Step 0 is removed (gh-openspec install) and replaced with a one-liner pointing to `./scripts/openspec --help`"
+  - "`README.md` 'Production checklist' is updated: adds doc-drift + cost-guard items, references the local script"
+  - "`CLAUDE.md` Step 0 points to `./scripts/openspec --help` as the sole CLI"
 
 test_plan:
   - "Unit (shellcheck): `scripts/openspec` passes shellcheck with no warnings at the `error` level"
   - "Unit (functional): `scripts/openspec scaffold 'sample feature'` creates `.openspec/specs/sample-feature.spec.yaml` with all placeholders substituted; running it again without `--force` exits non-zero"
   - "Unit (functional): `scripts/openspec check --strict` against the existing specs returns 0; deliberately corrupting a spec (remove `acceptance_criteria`) makes it return 1 with a clear error pointing at the file"
   - "Unit (functional): `scripts/openspec check --pr <n>` works without `gh` installed when the PR diff is in `$GITHUB_HEAD_REF` / `$GITHUB_BASE_REF` env (local-equivalent path)"
-  - "Unit (grep): repo-wide grep for `gh openspec` returns zero hits in tracked files"
+  - "Unit (grep): repo-wide grep for external extension references returns zero hits in tracked files"
   - "Unit (yamllint): every new/modified workflow parses cleanly under `.yamllint`"
   - "Unit (grep): every `uses:` in new workflows is followed by a 40-char SHA"
   - "Integration (smoke test): the existing `template-smoke-test.yml` is extended to invoke `scripts/openspec check` on a sandbox copy and assert it exits 0"
@@ -94,18 +91,17 @@ qa_notes: |
   the doc updates are coherent with the spec.
 
   The local `scripts/openspec` is intentionally minimal. It does not
-  reimplement the full gh-openspec extension (no `init` interactivity,
-  no remote-spec sync). When that becomes a need, the user can re-add
-  the extension as an OPTIONAL accelerator — but the template no longer
-  REQUIRES it.
+  reimplement a full interactive init flow or remote-spec sync. When
+  that becomes a need, an external tool can be added as an OPTIONAL
+  accelerator — but the template does not REQUIRE it.
 
 out_of_scope:
-  - "Reimplementing every gh-openspec subcommand (e.g. `gh openspec init` interactive mode) — the template's onboarding flow is in CLAUDE.md and runs through Claude Code or manual edit"
+  - "Reimplementing full interactive init mode — the template's onboarding flow is in CLAUDE.md and runs through Claude Code or manual edit"
   - "Token-level cost tracking (per-prompt token counts, dollar estimates) — daily run-count cap is a sufficient circuit breaker for v1"
   - "Replacing the agentic-workflow runtime — still `github/agentic-workflow@v1`, just guarded"
   - "Per-contributor or per-PR-author cost caps — daily org cap is enough; per-author surfaces fairness/abuse questions for a separate spec"
   - "Doc-drift policy that demands README updates for every change — only enforces a TOUCH on user-facing docs and only when source changes are present"
-  - "Migration tooling for downstream forks that already installed gh-openspec — they keep working; the extension stays compatible"
+  - "Migration tooling for downstream forks — they keep working with their existing setup"
 
 implementation_skill: null
 
@@ -114,7 +110,7 @@ eval_plan:
   metrics: []
 
 technical_notes: |
-  Why kill the extension dependency entirely?
+  Why a self-contained local CLI?
     "Fork-and-go" means a brand-new clone has zero install steps beyond
     `bash setup.sh`. Every external tool the template assumes is a
     failure surface a downstream user can hit on day one. The bash
@@ -137,7 +133,7 @@ technical_notes: |
     files diverge. The structural enforcement (hooks + CI) catches the
     misses, but consistent CLI behavior reduces churn.
 
-  Why not just delete `gh openspec` references and leave a "TODO"?
+  Why not just leave references as "TODO"?
     A half-removed dependency is worse than either keeping or removing
     it. The local script is a complete replacement for every documented
     surface.

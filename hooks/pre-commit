@@ -39,7 +39,7 @@ if [ -z "$SPEC" ]; then
   echo "$SOURCE" | sed 's/^/    /'
   echo ""
   echo "  Options:"
-  echo "    1. Create a spec:    gh openspec scaffold '<feature-name>'"
+  echo "    1. Create a spec:    scripts/openspec scaffold '<feature-name>'"
   echo "    2. Add existing spec: git add .openspec/specs/<slug>.spec.yaml"
   echo "    3. Bypass (sparingly): git commit --no-verify"
   echo ""

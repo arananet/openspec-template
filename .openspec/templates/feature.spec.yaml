@@ -11,6 +11,12 @@ author: "{{AUTHOR}}"
 created_at: "{{DATE}}"
 updated_at: "{{DATE}}"
 
+roles:
+  implementer: null    # Who builds it — GitHub username or team
+  reviewer: null       # Who reviews the PR
+  qa: null             # Who validates acceptance_criteria
+  product_owner: null  # Who approves the spec (draft → approved)
+
 description: |
   <!-- One paragraph describing WHAT this feature does and WHY it exists.
        Focus on the user or system outcome, not the implementation approach. -->

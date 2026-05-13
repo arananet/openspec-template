@@ -34,7 +34,9 @@ language version, dependencies, env vars, run command, etc.
 ## Contributing
 
 This project uses **OpenSpec** for spec-driven development — every feature
-or bugfix starts with a spec file under `.openspec/specs/`. See
+or bugfix starts with a spec file under `.openspec/specs/`. Each spec
+includes a `roles` block to assign responsibility (`implementer`,
+`reviewer`, `qa`, `product_owner`). See
 [`docs/OPENSPEC.md`](docs/OPENSPEC.md) for the full workflow, or
 [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contributor checklist.
 
