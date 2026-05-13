@@ -21,3 +21,11 @@ fail_on_missing_spec: true
 # Leave null to let Claude handle implementation without a specialist skill.
 # Options: "frontend-pro", "backend-pro", "data-eng-pro", "devops-pro", "mobile-pro"
 default_implementation_skill: null
+
+# Default role assignments injected into every scaffolded spec.
+# Use GitHub usernames (@alice) or team handles (@org/team). Leave null to
+# let the user/agent fill them in interactively.
+default_implementer: null     # Who builds it
+default_reviewer: null        # Who reviews the PR
+default_qa: null              # Who validates acceptance_criteria
+default_product_owner: null   # Who approves the spec (draft → approved)

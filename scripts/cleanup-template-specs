@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# cleanup-template-specs — remove the OpenSpec template's internal design specs
+# from a freshly forked repo so users start with an empty .openspec/specs/.
+#
+# These specs document how the template itself was built. They are not
+# meaningful to a downstream project and clutter the user's spec list.
+#
+# Run once after `bash setup.sh` on a new fork. Idempotent.
+
+set -euo pipefail
+
+SPECS_DIR=".openspec/specs"
+TEMPLATE_SPECS=(
+  "enterprise-hardening.spec.yaml"
+  "issue-autofix.spec.yaml"
+  "self-contained-and-bounded.spec.yaml"
+  "template-completeness.spec.yaml"
+  "template-production-readiness.spec.yaml"
+  "example-feature.spec.yaml"
+)
+
+if [ ! -d "$SPECS_DIR" ]; then
+  echo "error: $SPECS_DIR not found. Run from the repo root." >&2
+  exit 1
+fi
+
+removed=0
+for spec in "${TEMPLATE_SPECS[@]}"; do
+  if [ -f "$SPECS_DIR/$spec" ]; then
+    rm -f "$SPECS_DIR/$spec"
+    echo "  ✓ removed $SPECS_DIR/$spec"
+    removed=$((removed + 1))
+  fi
+done
+
+if [ "$removed" -eq 0 ]; then
+  echo "Nothing to clean — template specs already removed."
+else
+  echo ""
+  echo "Removed $removed template-internal spec(s)."
+  echo "Your .openspec/specs/ is now ready for your project's first spec:"
+  echo "  scripts/openspec scaffold \"<your first feature>\""
+fi

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "//": [
+    "Renovate alternative to .github/dependabot.yml — uncomment / install if your org",
+    "uses Renovate (https://docs.renovatebot.com/getting-started/installing-onboarding/).",
+    "Pick ONE: dependabot.yml OR renovate.json. Running both creates duplicate PRs."
+  ],
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":dependencyDashboard",
+    ":pinAllExceptPeerDependencies"
+  ],
+  "timezone": "UTC",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "prHourlyLimit": 4,
+  "prConcurrentLimit": 10,
+  "rangeStrategy": "bump",
+  "vulnerabilityAlerts": {
+    "labels": ["security", "dependencies"],
+    "automerge": false
+  },
+  "packageRules": [
+    {
+      "description": "Pin GitHub Actions to commit SHAs, matching the template's security policy",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    },
+    {
+      "description": "Group all non-major npm/pip/go updates into one PR per ecosystem",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major dependencies"
+    }
+  ],
+  "git-submodules": {
+    "enabled": false
+  }
+}

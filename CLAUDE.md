@@ -83,9 +83,12 @@ section that older versions had. Specifically:
 scripts/openspec scaffold "<feature-name>"
 ```
 
-Walk the user through `description`, `acceptance_criteria` (≥1), and
-`test_plan` (≥1) interactively — same one-question-at-a-time approach.
-Set `status: review` only after all three are non-trivial.
+Walk the user through `description`, `acceptance_criteria` (≥1),
+`test_plan` (≥1), and `roles` (implementer / reviewer / qa /
+product_owner) interactively — same one-question-at-a-time approach.
+If `roles.default_*` is set in `.openspec/config.yaml`, the scaffold
+script pre-fills those values; otherwise ask the user. Set
+`status: review` only after all are non-trivial.
 
 **Step 6 — Substitute placeholders across governance files and generate badges:**
 
@@ -175,6 +178,11 @@ with the template, do a single find-and-replace per token:
    dependency-review, OSSF Scorecard, DCO, Doc drift) on the default
    branch.
 
+6. **Clean up template-internal specs.** Run `bash scripts/cleanup-template-specs`
+   (or `make cleanup-template-specs`) to remove the design specs that
+   document how this template was built — they're not relevant to the
+   user's project and clutter `.openspec/specs/`.
+
 **Step 7 — Confirm setup is complete:**
 
 ```bash
@@ -214,6 +222,7 @@ When the user asks you to implement something new:
    - `description`: what this does and why
    - `acceptance_criteria`: definition of done (at least one item)
    - `test_plan`: at least one test per AC
+   - `roles`: who implements, reviews, QAs, and approves this spec (use defaults from `config.yaml` if set, otherwise ask)
    - `implementation_skill`: optional — check `agents.implementation_skills` in `config.yaml` for available domain skills
    - `out_of_scope`: what this explicitly does NOT cover
 

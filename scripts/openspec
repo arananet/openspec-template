@@ -47,6 +47,27 @@ git_user() {
   git config --get user.name 2>/dev/null || printf '%s' "${USER:-unknown}"
 }
 
+# Read a scalar value from .openspec/config.yaml under a 2-space-indented
+# subkey (e.g. config_get roles default_implementer). Returns empty if the
+# value is missing, null, or still a placeholder.
+config_get() {
+  local section="$1" key="$2"
+  [ -f "$CONFIG_FILE" ] || return 0
+  awk -v s="$section" -v k="$key" '
+    $0 ~ "^"s":" { in_s=1; next }
+    in_s && /^[a-z_]+:/ { in_s=0 }
+    in_s && $0 ~ "^[[:space:]]+"k":" {
+      sub(/^[[:space:]]+[^:]+:[[:space:]]*/, "")
+      sub(/[[:space:]]*#.*$/, "")
+      gsub(/^"|"$/, "")
+      gsub(/^'\''|'\''$/, "")
+      if ($0 == "null" || $0 == "~" || $0 == "") exit
+      print
+      exit
+    }
+  ' "$CONFIG_FILE"
+}
+
 # ── scaffold ──────────────────────────────────────────────────────────
 cmd_scaffold() {
   local name="" type="feature" force=0
@@ -97,6 +118,33 @@ cmd_scaffold() {
     -e "s|{{AUTHOR}}|${author//|/\\|}|g" \
     -e "s|{{DATE}}|${date}|g" \
     "$template" > "$out"
+
+  # Inject default roles from config.yaml when set. Replaces the literal
+  # "null" value in each role line; leaves untouched roles as null so
+  # the user/agent can fill them in interactively.
+  local r_imp r_rev r_qa r_po
+  r_imp="$(config_get roles default_implementer)"
+  r_rev="$(config_get roles default_reviewer)"
+  r_qa="$(config_get roles default_qa)"
+  r_po="$(config_get roles default_product_owner)"
+
+  inject_role() {
+    local field="$1" value="$2"
+    [ -n "$value" ] || return 0
+    # Replace `  field: null` with `  field: "value"` (only inside roles block).
+    awk -v f="$field" -v v="$value" '
+      /^roles:/ { in_r=1 }
+      in_r && /^[a-z_]+:/ && !/^roles:/ { in_r=0 }
+      in_r && $0 ~ "^[[:space:]]+"f":[[:space:]]+null" {
+        sub(/null/, "\"" v "\"")
+      }
+      { print }
+    ' "$out" > "${out}.tmp" && mv "${out}.tmp" "$out"
+  }
+  inject_role implementer   "$r_imp"
+  inject_role reviewer      "$r_rev"
+  inject_role qa            "$r_qa"
+  inject_role product_owner "$r_po"
 
   info "✓ created $out"
   info ""

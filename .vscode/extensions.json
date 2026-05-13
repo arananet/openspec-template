@@ -1,0 +1,15 @@
+{
+  // Recommended VS Code extensions for OpenSpec projects.
+  // VS Code prompts contributors to install these on first open.
+  "recommendations": [
+    "redhat.vscode-yaml",
+    "davidanson.vscode-markdownlint",
+    "editorconfig.editorconfig",
+    "github.vscode-github-actions",
+    "timonwong.shellcheck",
+    "github.copilot",
+    "github.copilot-chat",
+    "anthropic.claude-code"
+  ],
+  "unwantedRecommendations": []
+}

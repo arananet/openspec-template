@@ -64,6 +64,8 @@ Fill in:
 - `description` — what and why
 - `acceptance_criteria` — at least one verifiable item
 - `test_plan` — at least one test per AC
+- `roles` — who implements, reviews, QAs, and approves (defaults injected
+  from `roles.default_*` in `.openspec/config.yaml` if set)
 - `out_of_scope` — what this explicitly does NOT cover
 
 Set `status: review` when ready. Code written against a `draft` spec will be

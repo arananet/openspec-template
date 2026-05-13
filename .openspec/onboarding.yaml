@@ -76,6 +76,34 @@ questions:
     default: null
     maps_to: "agents.implementation_skills.default in config.yaml"
 
+  - id: roles.default_implementer
+    prompt: "Default implementer for new specs? (GitHub @user or @org/team — press Enter to skip)"
+    required: false
+    type: string
+    default: null
+    maps_to: "roles.default_implementer in config.yaml"
+
+  - id: roles.default_reviewer
+    prompt: "Default reviewer for new specs? (GitHub @user or @org/team — press Enter to skip)"
+    required: false
+    type: string
+    default: null
+    maps_to: "roles.default_reviewer in config.yaml"
+
+  - id: roles.default_qa
+    prompt: "Default QA owner for new specs? (GitHub @user or @org/team — press Enter to skip)"
+    required: false
+    type: string
+    default: null
+    maps_to: "roles.default_qa in config.yaml"
+
+  - id: roles.default_product_owner
+    prompt: "Default product owner for new specs? (GitHub @user or @org/team — press Enter to skip)"
+    required: false
+    type: string
+    default: null
+    maps_to: "roles.default_product_owner in config.yaml"
+
   - id: project.security_contact
     prompt: "Email address for private vulnerability reports? (used in SECURITY.md and CODE_OF_CONDUCT.md)"
     required: true

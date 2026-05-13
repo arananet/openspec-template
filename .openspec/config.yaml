@@ -116,3 +116,12 @@ hooks:
     enabled: true
     require_spec_reference: false
     pattern: "spec: <slug>"
+
+roles:
+  # Default role assignments for new specs. When set, these are
+  # pre-filled into the roles block of scaffolded specs.
+  # Use GitHub usernames or team handles (e.g. "@username", "@org/team").
+  default_implementer: null
+  default_reviewer: null
+  default_qa: null
+  default_product_owner: null

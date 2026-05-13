@@ -36,6 +36,37 @@ flowchart TD
 
 ---
 
+## Spec lifecycle
+
+Every spec moves through three statuses. Each transition has a gate that
+prevents downstream work from starting too early.
+
+```mermaid
+stateDiagram-v2
+    [*] --> draft : scripts/openspec scaffold
+    draft --> review : description + acceptance_criteria + test_plan filled
+    review --> approved : product_owner sign-off
+    review --> draft : reviewer requests rework
+    approved --> [*] : implementation merged
+
+    note right of draft
+        No code may be written yet.
+        spec-check.yml --strict fails.
+    end note
+
+    note right of review
+        Implementation can start.
+        Tests land in the same PR.
+    end note
+
+    note right of approved
+        Optional gate when
+        approved_required_for_merge: true
+    end note
+```
+
+---
+
 ## Layers of enforcement
 
 | Layer | When | What |

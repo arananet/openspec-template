@@ -1,0 +1,55 @@
+{
+  // Workspace settings tuned for OpenSpec projects.
+  // Override per-user values in your User settings, not here.
+
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "files.eol": "\n",
+
+  // Treat .openspec spec files as YAML so the schema-aware extension
+  // catches missing required fields early.
+  "files.associations": {
+    "*.spec.yaml": "yaml",
+    "CODEOWNERS": "ignore"
+  },
+
+  // Avoid noisy false positives in OpenSpec markdown (Mermaid blocks,
+  // long URLs in badge tables).
+  "markdownlint.config": {
+    "MD013": false,
+    "MD033": false,
+    "MD041": false
+  },
+
+  // YAML extension — point at common schemas so onboarding files get
+  // intellisense without an extra config file.
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": ".github/workflows/*.{yml,yaml}",
+    "https://json.schemastore.org/github-action.json": ".github/actions/*/action.{yml,yaml}",
+    "https://json.schemastore.org/dependabot-2.0.json": ".github/dependabot.yml"
+  },
+
+  // Make terminal commands match the project's bash conventions.
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.defaultProfile.linux": "bash",
+
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "strings": "off",
+      "other": "off"
+    }
+  },
+
+  "[yaml]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": false
+  },
+
+  "[shellscript]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  }
+}
