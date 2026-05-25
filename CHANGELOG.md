@@ -34,7 +34,6 @@ Guidelines:
   - `.github/workflows/spec-metrics.yml` — weekly DORA-style report on spec status, role coverage, PR→spec link rate
   - `docs/branch-protection-ruleset.json` + `scripts/apply-branch-protection` — one-command branch protection bootstrap
   - `SECRETS.md` — secrets-management policy with rotation cadences and incident response
-  - `scripts/openspec.ps1` — PowerShell port for Windows-native developers
   - PR template extended with accessibility, privacy / data-handling, and security checklists
 - `CONTRIBUTING.md` documents the `roles` block in the spec workflow
 - `CLAUDE.md` Step 5 now instructs Claude to walk users through `roles` during scaffolding

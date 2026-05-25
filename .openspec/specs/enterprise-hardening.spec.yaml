@@ -46,7 +46,7 @@ acceptance_criteria:
   - "Community health files exist at the repo root: SECURITY.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, SUPPORT.md, CHANGELOG.md — each uses {{PROJECT_NAME}} / {{GITHUB_OWNER}} / {{SECURITY_CONTACT}} placeholders that map cleanly to the onboarding flow"
   - ".github/CODEOWNERS exists with a documented ownership matrix using {{GITHUB_OWNER}}/{{TEAM_NAME}} placeholders and explicit ownership for .openspec/, .github/, and .claude/ directories"
   - ".github/FUNDING.yml exists with ko-fi (already referenced in README) and commented-out slots for github sponsors / open-collective"
-  - ".gitignore at the repo root covers Node, Python, Go, Rust, Java, .NET, macOS, Windows, Linux, JetBrains, VS Code, and common secret-file patterns (.env, *.pem, *.key)"
+  - ".gitignore at the repo root covers Node, Python, Go, Rust, Java, .NET, macOS, Linux, JetBrains, VS Code, and common secret-file patterns (.env, *.pem, *.key) — Linux-targeted template, no Windows-specific entries"
   - ".gitattributes at the repo root normalises line endings (text=auto eol=lf), marks common binary extensions, and marks generated/vendored paths via linguist attributes"
   - ".editorconfig at the repo root sets root=true, utf-8 charset, lf line endings, trim trailing whitespace, insert final newline, and per-language indent overrides for Python/Go/Makefile/Markdown/YAML"
   - ".github/ISSUE_TEMPLATE/ contains structured GitHub Issue Forms (YAML): bug_report.yml, feature_request.yml, spec_question.yml, plus a config.yml that disables blank issues and routes security reports to SECURITY.md"
