@@ -1,5 +1,5 @@
 # Default: treat all text files with LF line endings on checkout/checkin.
-# Keeps diffs consistent across macOS, Linux, and Windows contributors.
+# This template targets Linux-based workflows; LF everywhere.
 * text=auto eol=lf
 
 # ─── Source code ───────────────────────────────────────────────────────────
@@ -25,11 +25,6 @@
 *.bash    text eol=lf
 *.zsh     text eol=lf
 *.fish    text eol=lf
-
-# ─── Windows-only scripts keep CRLF ────────────────────────────────────────
-*.bat     text eol=crlf
-*.cmd     text eol=crlf
-*.ps1     text eol=crlf
 
 # ─── Data / config ─────────────────────────────────────────────────────────
 *.json    text eol=lf
@@ -67,8 +62,6 @@
 *.jar     binary
 *.class   binary
 *.so      binary
-*.dll     binary
-*.exe     binary
 
 # ─── Linguist hints: mark vendored / generated paths so the repo language
 #     stats reflect what humans actually write.
