@@ -32,6 +32,7 @@ Guidelines:
 
 ### Fixed
 
+- Markdown lint CI now passes a checked-in configuration file to the action instead of inline JSON (spec: enterprise-hardening).
 - Quoted/commented YAML parsing, ready-spec content checks, staged-spec validation, script/infrastructure coverage and enforcement of declared deterministic policy flags.
 
 ## 2026-05-13

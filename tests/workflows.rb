@@ -1,4 +1,5 @@
 require 'yaml'
+require 'json'
 require 'tmpdir'
 require 'fileutils'
 require 'open3'
@@ -41,3 +42,17 @@ puts 'PASS: workflow opt-in, opt-out, missing setting, and disabled cost guard'
 
 Dir.glob(File.join(root, '.github/workflows/*.yml')).each { |path| YAML.load_file(path) }
 puts 'PASS: workflow YAML parses'
+
+lint_workflow = YAML.load_file(File.join(root, '.github/workflows/lint.yml'))
+markdown_step = lint_workflow.fetch('jobs').fetch('markdownlint').fetch('steps').find do |step|
+  step.fetch('uses', '').start_with?('DavidAnson/markdownlint-cli2-action@')
+end
+config_path = markdown_step.fetch('with').fetch('config')
+raise 'markdownlint config must reference a supported file' unless config_path == '.markdownlint-cli2.jsonc'
+rules = JSON.parse(File.read(File.join(root, config_path))).fetch('config')
+expected_rules = {
+  'default' => true, 'MD013' => false, 'MD033' => false, 'MD041' => false,
+  'MD024' => { 'siblings_only' => true }
+}
+raise 'markdownlint rules changed' unless rules == expected_rules
+puts 'PASS: markdownlint action references a config file with the existing rules'
