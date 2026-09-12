@@ -26,7 +26,8 @@ After configuring the project and running `bash setup.sh`:
 2. Agree on scope, meaningful acceptance criteria, and corresponding tests.
    Set `status: review` once ready; do not claim human approval on their behalf.
 3. Implement one testable change and run its focused check immediately.
-4. Run `bash scripts/openspec check` and the configured test command.
+4. Run `bash scripts/openspec check`, then `bash scripts/openspec verify <slug>`
+  with the configured test environment and inspect `bash scripts/openspec status <slug>`.
 5. Include the spec change, implementation, and tests in the same PR.
    Update user-facing docs when behavior changes and review the evidence.
 
@@ -111,10 +112,39 @@ disposable GitHub repository before making enterprise assurance claims.
 
 ## Template Verification
 
-Run `make test-template` for template maintenance. It uses bash, git, and Ruby
+From the template repository root:
+
+```bash
+bash scripts/openspec check --template
+make test-template
+```
+
+The template test suite uses Bash, Git, and Ruby
 standard libraries (no gems) to exercise CLI/hook behavior and the actual
 AI-review guard shell without network calls. Ruby >= 2.6 is also required by the
 OpenSpec CLI and hooks, independently of the downstream application's language.
+
+Markdown lint is a separate toolchain. With Node >= 22 and npm available:
+
+```bash
+make setup-lint
+make lint-markdown
+make verify-template
+```
+
+`setup-lint` installs locked dependencies under `tools/lint` using `npm ci
+--ignore-scripts`; it needs registry access or a populated npm cache. CI runs
+the same install and lint targets on Node 24. `lint-markdown` runs offline after
+installation and fails with guidance when Node or dependencies are missing.
+The CLI is pinned to 0.23.2 with a patched `smol-toml` 1.8.0 override for
+GHSA-7w5x-hrqm-74c2; reassess the override when upgrading the CLI.
+Existing rule configuration is unchanged; the newer CLI also checks table spacing.
+All Markdown is checked except dependency directories and changelogs.
+
+`verify-template` combines strict spec validation, the template suite, and
+Markdown lint. It does **not** reproduce actionlint, ShellCheck, yamllint,
+security scans, or remote branch protection; those CI checks remain enabled.
+Node and npm are unnecessary for the core OpenSpec workflow or `test-template`.
 
 Template PR checks use the explicit `.openspec/template` marker in the base revision.
 Configured downstream projects use their own `testing.test_command`; these

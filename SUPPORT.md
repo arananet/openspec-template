@@ -5,7 +5,7 @@ Thanks for using `{{PROJECT_NAME}}`. Here's where to go for help.
 ## Quick Triage
 
 | You want to… | Go to… |
-|---|---|
+| --- | --- |
 | Report a bug | [Open a Bug report](../../issues/new?template=bug_report.yml) |
 | Request a feature | [Open a Feature request](../../issues/new?template=feature_request.yml) |
 | Ask about a spec | [Open a Spec question](../../issues/new?template=spec_question.yml) |

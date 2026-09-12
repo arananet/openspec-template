@@ -11,7 +11,7 @@ OPENSPEC := scripts/openspec
 
 TEMPLATE_FLAG := $(if $(wildcard .openspec/template),--template,)
 
-.PHONY: help setup check check-strict scaffold scaffold-bug test test-template status clean cleanup-template-specs apply-branch-protection
+.PHONY: help setup check check-strict scaffold scaffold-bug test test-template setup-lint lint-markdown verify-template status clean cleanup-template-specs apply-branch-protection
 
 help:  ## Show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -41,6 +41,14 @@ test-template:  ## Test template contracts locally (bash, git, Ruby; no network)
 	bash tests/template.sh
 	ruby tests/workflows.rb
 	ruby tests/openspec_core_test.rb
+
+setup-lint:  ## Install locked Markdown lint dependencies (Node >= 22, npm; network)
+	npm ci --ignore-scripts --prefix tools/lint
+
+lint-markdown:  ## Run the same Markdown lint command as CI (after setup-lint)
+	bash scripts/lint-markdown
+
+verify-template: check-strict test-template lint-markdown  ## Verify template contracts and Markdown, not all CI/security jobs
 
 status:  ## Show the active spec's execution state
 	$(OPENSPEC) status

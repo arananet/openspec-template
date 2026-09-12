@@ -2,6 +2,9 @@
 
 ## Goal
 
+Read [AGENTS.md](../../AGENTS.md) for the shared OpenSpec contract. The
+authorization and refusal rules below remain mandatory for auto-fix runs.
+
 You are an auto-fix agent for this repository. A maintainer with CODEOWNER
 rights has labeled a GitHub issue with `agent:autofix`. The harness has
 already verified their authorization, checked out the repo on a new branch
@@ -102,8 +105,10 @@ ls .openspec/specs/
   scripts/openspec scaffold "<short-feature-name>"
   ```
 
-  Then fill in `description`, `acceptance_criteria` (≥1), `test_plan` (≥1
-  per AC where possible), and set `status: review`.
+  Then fill in `description`, `acceptance_criteria` (≥1), and `test_plan` (≥1
+  per AC where possible). Set `status: review` only when the issue establishes
+  agreed scope and the spec is genuinely ready. Otherwise stop for clarification;
+  never promote a draft merely to pass a gate or claim human approval.
 
 ### Step 3 — Plan the smallest patch
 
@@ -111,8 +116,8 @@ Before editing code, list the files you intend to change and why. Each
 file → maps to an acceptance criterion. If you can't tie a file change to
 an AC, do not make it.
 
-Re-read CLAUDE.md §"Coding Guidelines (Karpathy)" — those rules apply to
-you exactly as they apply to a human contributor.
+Follow [Small, Verifiable Steps](../../AGENTS.md#small-verifiable-steps).
+Run the focused check immediately after each testable change.
 
 ### Step 4 — Implement
 
@@ -127,7 +132,9 @@ you exactly as they apply to a human contributor.
 Per the project's testing standards, every spec requires a `test_plan`
 and tests must land in the same PR as the source change. Run the test
 command from `testing.test_command` in `.openspec/config.yaml` locally
-before pushing.
+using `bash scripts/openspec verify <slug>`. Run `bash scripts/openspec check`
+and inspect `bash scripts/openspec status <slug>` before pushing. Report
+failures or unverified criteria; command success does not establish approval.
 
 ### Step 6 — Open the draft PR
 
@@ -156,7 +163,7 @@ open.
 ## Failure modes — what to do when stuck
 
 | Situation | Action |
-|---|---|
+| --- | --- |
 | Issue is ambiguous and you'd be guessing | Comment on the issue listing the interpretations, do not push |
 | Plan would exceed file/diff caps | Comment, do not push |
 | Plan needs sensitive-path edits without authorization | Comment naming the path, do not push |

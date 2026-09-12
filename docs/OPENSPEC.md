@@ -74,7 +74,7 @@ stateDiagram-v2
 ## Layers of enforcement
 
 | Layer | When | What |
-|---|---|---|
+| --- | --- | --- |
 | Git hook (local) | `git commit` | Blocks commits with source changes but no spec |
 | Pre-commit framework (optional) | `git commit` | Runs gitleaks, yamllint, markdownlint, shellcheck |
 | CI — lint | Every PR | actionlint, yamllint, shellcheck, markdownlint |
@@ -121,7 +121,7 @@ codes, policy details, pause/resume and opt-in bounded agent adapters.
 In Claude Code, use the slash commands instead:
 
 | Slash command | What it does |
-|---|---|
+| --- | --- |
 | `/openspec-scaffold <name>` | Guided spec creation — interactive Q&A, validates required fields |
 | `/openspec-implement <slug>` | Reads spec, checks status, invokes domain skill, implements + writes tests |
 | `/openspec-check` | Validates spec coverage for current staged changes |
@@ -170,12 +170,12 @@ Templates: `.openspec/templates/{feature,bugfix}.spec.yaml`.
 .openspec/
 ├── config.yaml              # Project + CI configuration
 ├── defaults.yaml            # Personal/team defaults
-├── onboarding.yaml          # Questions Claude Code asks during setup
+├── onboarding.yaml          # Setup questions for any capable agent or maintainer
 ├── specs/                   # Active spec files
 └── templates/               # feature.spec.yaml + bugfix.spec.yaml
 
 scripts/
-└── openspec                 # Local CLI — bash + coreutils + git only
+└── openspec                 # Local CLI — Bash + Git + Ruby >= 2.6 (no gems)
 
 .harness/                    # Eval harness for AI-backed features
 ├── scenarios/
@@ -229,7 +229,7 @@ flowchart LR
 ```
 
 | Guarantee | Mechanism |
-|---|---|
+| --- | --- |
 | Only maintainers can trigger | `.github/CODEOWNERS` parsed; non-owners get the label removed |
 | Always opens a **draft** PR | Workflow uses `gh pr create --draft` |
 | Cannot edit CI / security configs by default | `agents.issue_autofix.sensitive_paths` block-list |
@@ -278,7 +278,7 @@ spec's `test_plan`. For AI-backed components, add an `eval_plan` block
 that links the spec to scenarios under `.harness/scenarios/`.
 
 | Concern | Tool |
-|---|---|
+| --- | --- |
 | Functional correctness | `test_plan` (unit / integration) |
 | Agent task success | `.harness/scenarios/` |
 | Grounding / citations | `.harness/evaluators/` |
@@ -294,7 +294,7 @@ These four principles complement OpenSpec — Goal-Driven Execution is
 already enforced by the spec gate.
 
 | Principle | What it addresses |
-|---|---|
+| --- | --- |
 | **Think Before Coding** | Wrong assumptions, hidden confusion, missing tradeoffs |
 | **Simplicity First** | Overcomplication, bloated abstractions |
 | **Surgical Changes** | Orthogonal edits, touching code you shouldn't |

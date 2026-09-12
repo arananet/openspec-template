@@ -9,6 +9,9 @@ description: |
   The user approved template maintenance with placeholders preserved.
 
 acceptance_criteria:
+  - "The agent check command delegates classification and coverage to the shared CLI and distinguishes staged coverage, unstaged work, tests, and human approval."
+  - "Local Markdown lint and CI use the same checked-in runner and pinned CLI version; missing prerequisites fail with actionable guidance rather than silently skipping checks."
+  - "The README presents one minimal adoption path before optional capabilities, without disabling security workflows or requiring agent execution."
   - "Root AGENTS.md is the shared agent contract; Claude and Copilot entry points reference it and remain concise."
   - "Onboarding is loaded on demand by any capable agent, preserves the existing questions and badge catalog, and distinguishes template maintenance from downstream setup."
   - "Small changes retain a review/approved spec, acceptance criteria, tests, and verification without requiring extra plans, specialists, or distinct people for each role."
@@ -17,6 +20,9 @@ acceptance_criteria:
   - "Local regression checks cover instruction routing, preserved onboarding, AI opt-in, and existing scaffold/check and hook behavior; CI runs them on pull requests."
 
 test_plan:
+  - "Execute the agent check command's Bash example in an isolated repository and confirm source-only staged changes fail while staged source plus a ready spec pass."
+  - "Exercise the shared lint runner with fake tools for prerequisite and argument checks, then run the real Markdown linter on the CI file selection."
+  - "Check onboarding and quickstart links, preserve template placeholders, and run the required template checks."
   - "Run the local template regression suite and verify root rules, adapter links, onboarding content, and default AI review settings."
   - "Exercise scaffold/check with feature and bugfix fixtures, draft rejection in strict mode, invalid specs, and duplicate scaffold protection."
   - "Exercise the pre-commit hook in a temporary repository with source-only and source-plus-spec staged changes."

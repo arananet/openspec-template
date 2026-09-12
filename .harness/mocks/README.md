@@ -9,7 +9,7 @@ non-deterministic, rate-limited, or expensive.
 ## What goes here
 
 | File type | Purpose |
-|---|---|
+| --- | --- |
 | `*.json` | Stubbed API responses (tool call returns) |
 | `*.txt` / `*.md` | Sample documents, corpora, or knowledge-base content |
 | `*.yaml` | Mock tool definitions (name, description, parameters, canned return) |

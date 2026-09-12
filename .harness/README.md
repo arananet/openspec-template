@@ -19,7 +19,7 @@ OpenSpec defines **what should be true** — via `acceptance_criteria` and `test
 The harness proves **whether it is true** — via reproducible, measurable, executable runs.
 
 | OpenSpec artifact | Harness artifact |
-|---|---|
+| --- | --- |
 | `acceptance_criteria` | Scenario `expected` assertions |
 | `test_plan` | Scenario `metrics` + evaluator rubrics |
 | `eval_plan.scenarios` | Scenario files in `scenarios/` |

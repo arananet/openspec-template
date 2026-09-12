@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if ! command -v node > /dev/null 2>&1; then
+  printf 'Node.js 22 or newer is required for Markdown lint; OpenSpec itself does not require Node.\n' >&2
+  exit 2
+fi
+node -e 'if (Number(process.versions.node.split(".")[0]) < 22) { console.error("Markdown lint requires Node.js 22 or newer."); process.exit(2); }'
+
+LINTER="$ROOT/tools/lint/node_modules/.bin/markdownlint-cli2"
+if [[ ! -x "$LINTER" ]]; then
+  printf 'Markdown lint dependencies are missing. Run make setup-lint, then retry.\n' >&2
+  exit 2
+fi
+
+cd "$ROOT"
+exec "$LINTER" --config .markdownlint-cli2.jsonc '**/*.md' '!**/node_modules/**' '!**/CHANGELOG.md'

@@ -6,10 +6,10 @@ Security fixes are applied to the latest release line of `{{PROJECT_NAME}}`.
 Older releases receive fixes only when explicitly flagged in the
 [CHANGELOG](CHANGELOG.md).
 
-| Version | Supported          |
-| ------- | ------------------ |
-| latest  | :white_check_mark: |
-| older   | on a case-by-case basis |
+| Version | Supported |
+| --- | --- |
+| latest | :white_check_mark: |
+| older | on a case-by-case basis |
 
 ## Reporting a Vulnerability
 

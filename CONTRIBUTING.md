@@ -129,7 +129,7 @@ The template asks you to:
 Your PR must pass:
 
 | Check | What it does |
-|---|---|
+| --- | --- |
 | **OpenSpec PR Check** | Validates spec coverage and required fields |
 | **OpenSpec AI Review** | Semantic alignment between spec and implementation |
 | **Tests** | Runs `testing.test_command` from `.openspec/config.yaml` |

@@ -5,7 +5,7 @@ Evaluators are rubrics or scripts that score scenario runs against the `expected
 ## Types of evaluators
 
 | Type | Format | When to use |
-|---|---|---|
+| --- | --- | --- |
 | **Rubric** | Markdown file | LLM-as-judge — describe scoring criteria in natural language |
 | **Script** | Python / shell | Deterministic checks (regex, schema validation, threshold comparison) |
 | **Composite** | YAML pointing to multiple | Mix of rubric + script for hybrid evaluation |

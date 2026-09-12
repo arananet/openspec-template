@@ -85,11 +85,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Run markdownlint
-        uses: DavidAnson/markdownlint-cli2-action@992badcdf24e3b8eb7e87ff9287fe931bcb00c6e # v20.0.0
+      - name: Set up Node for Markdown lint
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
         with:
-          globs: |
-            **/*.md
-            !node_modules
-            !**/CHANGELOG.md
-          config: .markdownlint-cli2.jsonc
+          node-version: "24"
+
+      - name: Install Markdown lint dependencies
+        run: make setup-lint
+
+      - name: Run markdownlint
+        run: make lint-markdown

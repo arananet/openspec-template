@@ -112,7 +112,7 @@ Configure at **Settings → Rules → Rulesets → New tag ruleset**:
 GitHub now supports two mechanisms:
 
 | Feature | Classic branch protection | Rulesets |
-|---|---|---|
+| --- | --- | --- |
 | Layered overlap | one rule per pattern | multiple rulesets stack |
 | Insights / dry-run | no | yes (`Enforcement: Evaluate`) |
 | Tag protection | separate UI | unified |

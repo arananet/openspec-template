@@ -44,15 +44,47 @@ Dir.glob(File.join(root, '.github/workflows/*.yml')).each { |path| YAML.load_fil
 puts 'PASS: workflow YAML parses'
 
 lint_workflow = YAML.load_file(File.join(root, '.github/workflows/lint.yml'))
-markdown_step = lint_workflow.fetch('jobs').fetch('markdownlint').fetch('steps').find do |step|
-  step.fetch('uses', '').start_with?('DavidAnson/markdownlint-cli2-action@')
-end
-config_path = markdown_step.fetch('with').fetch('config')
-raise 'markdownlint config must reference a supported file' unless config_path == '.markdownlint-cli2.jsonc'
-rules = JSON.parse(File.read(File.join(root, config_path))).fetch('config')
+markdown_steps = lint_workflow.fetch('jobs').fetch('markdownlint').fetch('steps')
+raise 'CI must use the shared lint target' unless markdown_steps.any? { |step| step['run'] == 'make lint-markdown' }
+raise 'CI must install locked dependencies' unless markdown_steps.any? { |step| step['run'] == 'make setup-lint' }
+node_step = markdown_steps.find { |step| step.fetch('uses', '').start_with?('actions/setup-node@') }
+raise 'CI Markdown lint must use Node 24' unless node_step.fetch('with').fetch('node-version') == '24'
+manifest = JSON.parse(File.read(File.join(root, 'tools/lint/package.json')))
+raise 'Markdown CLI version must stay pinned' unless manifest.fetch('devDependencies').fetch('markdownlint-cli2') == '0.23.2'
+rules = JSON.parse(File.read(File.join(root, '.markdownlint-cli2.jsonc'))).fetch('config')
 expected_rules = {
   'default' => true, 'MD013' => false, 'MD033' => false, 'MD041' => false,
   'MD024' => { 'siblings_only' => true }
 }
 raise 'markdownlint rules changed' unless rules == expected_rules
-puts 'PASS: markdownlint action references a config file with the existing rules'
+puts 'PASS: CI uses shared Markdown targets, a pinned CLI and the existing rules'
+
+Dir.mktmpdir('openspec lint runner ') do |sandbox|
+  FileUtils.mkdir_p(File.join(sandbox, 'scripts'))
+  FileUtils.cp(File.join(root, 'scripts/lint-markdown'), File.join(sandbox, 'scripts/lint-markdown'))
+  bin = File.join(sandbox, 'bin')
+  FileUtils.mkdir_p(bin)
+  FileUtils.ln_s('/usr/bin/dirname', File.join(bin, 'dirname'))
+  run_lint = lambda do |extra = {}|
+    Open3.capture2e({'PATH' => bin, 'FAKE_NODE_EXIT' => '0', 'FAKE_LINT_EXIT' => '0'}.merge(extra),
+                   '/bin/bash', File.join(sandbox, 'scripts/lint-markdown'), chdir: '/')
+  end
+  output, result = run_lint.call
+  raise 'missing Node must fail with guidance' unless result.exitstatus == 2 && output.include?('Node.js 22')
+  File.write(File.join(bin, 'node'), "#!/bin/bash\nexit \"${FAKE_NODE_EXIT:-0}\"\n")
+  FileUtils.chmod(0755, File.join(bin, 'node'))
+  output, result = run_lint.call
+  raise 'missing dependencies must fail with guidance' unless result.exitstatus == 2 && output.include?('make setup-lint')
+  linter = File.join(sandbox, 'tools/lint/node_modules/.bin/markdownlint-cli2')
+  FileUtils.mkdir_p(File.dirname(linter))
+  File.write(linter, "#!/bin/bash\nprintf '%s\\n' \"$PWD\" \"$@\"\nexit \"${FAKE_LINT_EXIT:-0}\"\n")
+  FileUtils.chmod(0755, linter)
+  output, result = run_lint.call
+  expected = [sandbox, '--config', '.markdownlint-cli2.jsonc', '**/*.md', '!**/node_modules/**', '!**/CHANGELOG.md']
+  raise 'lint runner changed arguments or cwd' unless result.success? && output.lines.map(&:strip) == expected
+  _output, result = run_lint.call('FAKE_LINT_EXIT' => '1')
+  raise 'lint failures must propagate' unless result.exitstatus == 1
+  _output, result = run_lint.call('FAKE_NODE_EXIT' => '2')
+  raise 'unsupported Node must fail' unless result.exitstatus == 2
+end
+puts 'PASS: lint runner prerequisites, paths with spaces, CI globs and failure propagation'

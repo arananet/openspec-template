@@ -28,7 +28,8 @@ chmod +x scripts/openspec
 scripts/openspec --help
 ```
 
-It requires bash, standard shell utilities, and git, not an extension install.
+It requires Bash, Git, standard shell utilities, and Ruby >= 2.6 (no gems),
+not an extension install or AI runtime.
 
 ## 2. Collect and Confirm Values
 

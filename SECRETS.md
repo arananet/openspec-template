@@ -35,7 +35,7 @@ organization. Examples:
 ## Enforcement
 
 | Layer | Mechanism |
-|---|---|
+| --- | --- |
 | Pre-commit | `gitleaks` runs in `hooks/pre-commit` (when installed via `setup.sh`) |
 | PR | `.github/workflows/secret-scan.yml` blocks PRs containing detected secrets |
 | Repository | GitHub Push Protection enabled — see `docs/BRANCH_PROTECTION.md` |
@@ -44,7 +44,7 @@ organization. Examples:
 ## Rotation
 
 | Class | Rotation cadence | Trigger |
-|---|---|---|
+| --- | --- | --- |
 | Cloud OIDC tokens | N/A (short-lived) | every workflow run |
 | API keys (3rd party) | 90 days | calendar or on team change |
 | Service account keys | 30 days | calendar; immediate on incident |

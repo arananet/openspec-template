@@ -12,7 +12,7 @@ expect_failure() {
   fi
 }
 
-for adapter in CLAUDE.md .github/copilot-instructions.md .github/AGENTS.md; do
+for adapter in CLAUDE.md .github/copilot-instructions.md .github/AGENTS.md .claude/commands/openspec-check.md; do
   grep -q 'AGENTS.md' "$ROOT/$adapter" || fail "$adapter does not route to shared rules"
   [[ $(wc -l < "$ROOT/$adapter") -le 30 ]] || fail "$adapter is no longer a thin adapter"
 done
@@ -24,7 +24,21 @@ grep -q 'onboarding.yaml' "$ROOT/docs/ONBOARDING.md"
 grep -q 'defaults.yaml' "$ROOT/docs/ONBOARDING.md"
 grep -q 'Apply these to the project?' "$ROOT/docs/ONBOARDING.md"
 [[ $(grep -c '^| `.*` | `!\[' "$ROOT/docs/ONBOARDING.md") -eq 41 ]] || fail "badge catalog changed"
+grep -q 'AGENTS.md#small-verifiable-steps' "$ROOT/.github/agents/issue-autofix.md"
+if grep -q 'Coding Guidelines (Karpathy)' "$ROOT/.github/agents/issue-autofix.md"; then
+  fail "auto-fix references a removed instruction section"
+fi
+for guide in docs/ONBOARDING.md docs/ADOPTION.md; do
+  [[ -f "$ROOT/$guide" ]] || fail "missing adoption guide: $guide"
+  grep -q "$guide" "$ROOT/README.md" || fail "README does not link to $guide"
+done
+awk '/^## Start With This Template$/ { found=1 } /^## Quick start$/ { exit !found } END { if (!found) exit 1 }' "$ROOT/README.md" || fail "minimal adoption path must precede project quickstart"
+grep -q '{{PROJECT_NAME}}' "$ROOT/README.md"
+grep -q '{{TEST_COMMAND}}' "$ROOT/README.md"
 printf 'PASS: shared agent contract and on-demand onboarding\n'
+
+CHECK_SCRIPT="$(awk '/^```bash$/ { in_block=1; next } /^```$/ { in_block=0 } in_block' "$ROOT/.claude/commands/openspec-check.md")"
+[[ -n "$CHECK_SCRIPT" ]] || fail "check command has no executable example"
 
 mkdir -p "$SANDBOX/scripts" "$SANDBOX/.openspec/specs"
 cp "$ROOT/scripts/openspec" "$SANDBOX/scripts/openspec"
@@ -79,8 +93,11 @@ printf 'console.log("fixture");\n' > fixture.ts
 git add fixture.ts
 expect_failure bash .git/hooks/pre-commit
 grep -q 'no spec changes' "$SANDBOX/output"
+expect_failure bash -c "$CHECK_SCRIPT"
+grep -q 'no spec changes' "$SANDBOX/output"
 git add .openspec/specs/valid.spec.yaml
 bash .git/hooks/pre-commit
+bash -c "$CHECK_SCRIPT" > /dev/null
 printf 'PASS: source-only rejected; source with spec accepted\n'
 
 cp "$ROOT/.openspec/specs/lean-agent-workflow.spec.yaml" .openspec/specs/
