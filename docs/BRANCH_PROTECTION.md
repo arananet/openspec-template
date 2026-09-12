@@ -14,11 +14,12 @@ protection) or **Settings → Rules → Rulesets** (newer, recommended).
 
 ### Required status checks
 
-All of the following must pass before a PR can merge:
+Require the applicable deterministic PR jobs below, using their actual check
+names from a completed run. Review [adoption and limitations](ADOPTION.md)
+before applying the supplied ruleset; it is not a verified universal preset.
 
 - `OpenSpec PR Check / Validate Spec Coverage`
 - `OpenSpec PR Check / Run Tests` *(when `ci.run_tests: true`)*
-- `OpenSpec AI Review / AI Spec Alignment Review`
 - `Lint / actionlint (workflow YAML)`
 - `Lint / yamllint (all YAML)`
 - `Lint / shellcheck (shell scripts)`
@@ -26,9 +27,13 @@ All of the following must pass before a PR can merge:
 - `CodeQL / Analyze (<language>)` — one per language in the matrix
 - `Secret Scan / Gitleaks`
 - `Dependency Review / Review new dependencies`
-- `OSSF Scorecard / Scorecard analysis` *(weekly, also blocks on schedule misses)*
 - `DCO / DCO check` *(or signed-commits — see "Commit identity" below)*
 - Any language-specific build / lint checks added by your team
+
+AI spec review is opt-in and advisory; do not require it when disabled or
+unavailable. Review scheduled Scorecard findings separately rather than
+requiring a scheduled job on every PR. Existing remote rules are not changed
+by editing these instructions.
 
 Enable **Require branches to be up to date before merging** so checks always
 run against the current base.

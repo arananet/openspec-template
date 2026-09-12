@@ -13,6 +13,8 @@ SPECS_DIR=".openspec/specs"
 TEMPLATE_SPECS=(
   "enterprise-hardening.spec.yaml"
   "issue-autofix.spec.yaml"
+  "lean-agent-workflow.spec.yaml"
+  "reliable-verification-and-resumable-execution.spec.yaml"
   "self-contained-and-bounded.spec.yaml"
   "template-completeness.spec.yaml"
   "template-production-readiness.spec.yaml"
@@ -32,6 +34,8 @@ for spec in "${TEMPLATE_SPECS[@]}"; do
     removed=$((removed + 1))
   fi
 done
+
+rm -f .openspec/template
 
 if [ "$removed" -eq 0 ]; then
   echo "Nothing to clean — template specs already removed."

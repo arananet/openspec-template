@@ -9,10 +9,9 @@ SHELL := /usr/bin/env bash
 
 OPENSPEC := scripts/openspec
 
-# Read testing.test_command from .openspec/config.yaml (best-effort).
-TEST_CMD := $(shell grep -E '^[[:space:]]*test_command:' .openspec/config.yaml 2>/dev/null | head -1 | sed -E 's/^[[:space:]]*test_command:[[:space:]]*//' | sed -E 's/^"(.*)"$$/\1/')
+TEMPLATE_FLAG := $(if $(wildcard .openspec/template),--template,)
 
-.PHONY: help setup check check-strict scaffold scaffold-bug test status clean cleanup-template-specs apply-branch-protection
+.PHONY: help setup check check-strict scaffold scaffold-bug test test-template status clean cleanup-template-specs apply-branch-protection
 
 help:  ## Show this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -21,10 +20,10 @@ setup:  ## Install git hooks and make scripts/openspec executable
 	bash setup.sh
 
 check:  ## Validate every spec in .openspec/specs/
-	$(OPENSPEC) check
+	$(OPENSPEC) check $(TEMPLATE_FLAG)
 
 check-strict:  ## Validate specs and treat 'draft' status as failure
-	$(OPENSPEC) check --strict
+	$(OPENSPEC) check --strict $(TEMPLATE_FLAG)
 
 scaffold:  ## Create a new feature spec.  Usage: make scaffold name="my feature"
 	@if [ -z "$(name)" ]; then echo 'usage: make scaffold name="my feature"'; exit 2; fi
@@ -34,20 +33,17 @@ scaffold-bug:  ## Create a new bugfix spec.  Usage: make scaffold-bug name="logi
 	@if [ -z "$(name)" ]; then echo 'usage: make scaffold-bug name="login crash"'; exit 2; fi
 	$(OPENSPEC) scaffold "$(name)" --type bugfix
 
-test:  ## Run testing.test_command from .openspec/config.yaml
-	@if [ -z "$(TEST_CMD)" ] || echo "$(TEST_CMD)" | grep -q '{{'; then \
-		echo "error: testing.test_command not configured in .openspec/config.yaml"; exit 1; \
-	fi
-	@echo "→ $(TEST_CMD)"
-	@bash -c '$(TEST_CMD)'
+test:  ## Verify a spec with configured tests. Usage: make test name=my-feature
+	@if [ -z "$(name)" ]; then echo 'usage: make test name=<spec-slug>'; exit 2; fi
+	$(OPENSPEC) verify "$(name)"
 
-status:  ## Show OpenSpec configuration status
-	@if grep -q '{{' .openspec/config.yaml 2>/dev/null; then \
-		echo "STATUS: NOT_CONFIGURED — run onboarding (open in Claude Code or edit .openspec/config.yaml)"; \
-	else \
-		echo "STATUS: CONFIGURED"; \
-	fi
-	@$(OPENSPEC) check 2>&1 | tail -5 || true
+test-template:  ## Test template contracts locally (bash, git, Ruby; no network)
+	bash tests/template.sh
+	ruby tests/workflows.rb
+	ruby tests/openspec_core_test.rb
+
+status:  ## Show the active spec's execution state
+	$(OPENSPEC) status
 
 clean:  ## Remove generated artifacts (sandbox/test specs only — never touches .openspec/specs/)
 	@find . -name '*.bak' -not -path './.git/*' -delete

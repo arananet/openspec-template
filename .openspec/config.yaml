@@ -41,6 +41,17 @@ testing:
   coverage_threshold: null
   fail_on_missing_tests: true
 
+verification:
+  timeout_seconds: 300
+
+execution:
+  enabled: false
+  adapter: null
+  max_attempts: 1
+  max_seconds: 600
+  max_cost: 0
+  adapters: {}
+
 ci:
   fail_on_missing_spec: true
   fail_on_draft_spec: false
@@ -52,7 +63,7 @@ ci:
 
 agents:
   spec_review:
-    enabled: true
+    enabled: false
     model: "openai/gpt-4o-mini"
     trigger: "pull_request"
     post_as: "pr-comment"

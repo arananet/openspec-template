@@ -1,13 +1,5 @@
 name: OpenSpec PR Check
 
-# Deterministic spec-coverage gate. Complements the agentic spec-ai-review.yml.
-#
-# This workflow:
-#   1. Ensures OpenSpec is initialised and fully configured.
-#   2. Validates spec coverage for changed files.
-#   3. Validates required fields in every spec.
-#   4. Runs the project's test command (when ci.run_tests is true).
-
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -28,100 +20,28 @@ jobs:
       contents: read
       pull-requests: read
 
-    outputs:
-      has_source_changes: ${{ steps.coverage.outputs.has_source_changes }}
-      configured: ${{ steps.init.outputs.configured }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0 # required for git diff against base branch
 
-      - name: Check OpenSpec is initialized
-        id: init
+      - name: Validate using the shared CLI
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          TEMPLATE_REPOSITORY: ${{ vars.OPENSPEC_TEMPLATE }}
         run: |
-          if [ ! -f .openspec/config.yaml ]; then
-            echo "::warning::OpenSpec not initialized. Run 'scripts/openspec init'."
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            exit 0
+          args=(check --ci)
+          template_ref="${BASE_SHA:-HEAD}"
+          if [[ -f .openspec/template ]] && { [[ "$TEMPLATE_REPOSITORY" == true ]] || git cat-file -e "$template_ref:.openspec/template" 2>/dev/null; }; then
+            args+=(--template)
           fi
-          if grep -q '{{' .openspec/config.yaml; then
-            echo "::warning::config.yaml still contains placeholder values — skipping spec checks."
-            echo "Open this project in Claude Code or edit .openspec/config.yaml manually."
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "configured=true" >> "$GITHUB_OUTPUT"
-          echo "✓ config.yaml is fully configured"
+          if [[ -n "$BASE_SHA" ]]; then args+=(--base "$BASE_SHA"); fi
+          bash scripts/openspec "${args[@]}"
 
-      - name: Check spec coverage for changed files
-        if: steps.init.outputs.configured == 'true'
-        id: coverage
-        run: |
-          BASE="${{ github.base_ref }}"
-          CHANGED=$(git diff --name-only "origin/${BASE}...HEAD")
-
-          SOURCE=$(echo "$CHANGED" | grep -E '\.(py|ts|js|tsx|jsx|go|java|rb|rs|cpp|c|cs|swift|kt|php)$' || true)
-          SPECS=$(echo "$CHANGED"  | grep -E '\.openspec/specs/.*\.spec\.yaml$' || true)
-
-          if [ -n "$SOURCE" ]; then
-            echo "has_source_changes=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_source_changes=false" >> "$GITHUB_OUTPUT"
-          fi
-
-          if [ -n "$SOURCE" ] && [ -z "$SPECS" ]; then
-            echo "::error::This PR modifies source files but includes no spec changes."
-            echo ""
-            echo "Changed source files:"
-            echo "$SOURCE" | sed 's/^/  /'
-            echo ""
-            echo "Fix: scripts/openspec scaffold '<feature-name>'"
-            exit 1
-          fi
-
-          if [ -n "$SPECS" ]; then
-            echo "✓ Spec changes detected:"
-            echo "$SPECS" | sed 's/^/  /'
-          else
-            echo "✓ No source file changes — spec not required"
-          fi
-
-      - name: Validate spec files
-        if: steps.init.outputs.configured == 'true'
-        run: |
-          FAIL=0
-          REQUIRED_FIELDS="title description acceptance_criteria test_plan status"
-
-          while IFS= read -r -d '' spec; do
-            name=$(basename "$spec")
-            for field in $REQUIRED_FIELDS; do
-              if ! grep -q "^${field}:" "$spec"; then
-                echo "::error file=${spec}::Missing required field: ${field}"
-                FAIL=1
-              fi
-            done
-
-            STATUS=$(grep '^status:' "$spec" | head -1 | awk '{print $2}' | tr -d '"')
-            if [[ "$STATUS" != "draft" && "$STATUS" != "review" && "$STATUS" != "approved" ]]; then
-              echo "::error file=${spec}::Invalid status '${STATUS}' (must be draft|review|approved)"
-              FAIL=1
-            fi
-
-            if [ $FAIL -eq 0 ]; then
-              echo "✓ $name"
-            fi
-          done < <(find .openspec/specs -name "*.spec.yaml" ! -name ".gitkeep" -print0 2>/dev/null)
-
-          exit $FAIL
-
-  # ── Separate job so the test command runs in a clean environment and can
-  #    be required independently in branch protection.
   run-tests:
     name: Run Tests
     needs: spec-check
-    if: needs.spec-check.outputs.configured == 'true' && needs.spec-check.outputs.has_source_changes == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -130,44 +50,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
 
-      - name: Read CI config from .openspec/config.yaml
-        id: cfg
-        run: |
-          run_tests=$(grep -E '^\s*run_tests:' .openspec/config.yaml | head -1 | awk '{print $2}' | tr -d '"')
-          test_cmd=$(grep -E '^\s*test_command:' .openspec/config.yaml | head -1 | sed -E 's/^\s*test_command:\s*//' | sed -E 's/^"(.*)"$/\1/')
-          fail_on_missing=$(grep -E '^\s*fail_on_missing_tests:' .openspec/config.yaml | head -1 | awk '{print $2}' | tr -d '"')
-
-          echo "run_tests=${run_tests}"            >> "$GITHUB_OUTPUT"
-          echo "test_cmd=${test_cmd}"              >> "$GITHUB_OUTPUT"
-          echo "fail_on_missing=${fail_on_missing}" >> "$GITHUB_OUTPUT"
-
-          echo "run_tests=${run_tests}"
-          echo "test_cmd=${test_cmd}"
-          echo "fail_on_missing=${fail_on_missing}"
-
-      - name: Skip if run_tests is disabled
-        if: steps.cfg.outputs.run_tests != 'true'
-        run: |
-          echo "::notice::ci.run_tests is false in .openspec/config.yaml — skipping."
-          exit 0
-
-      - name: Validate test_command is configured
-        if: steps.cfg.outputs.run_tests == 'true'
-        run: |
-          CMD="${{ steps.cfg.outputs.test_cmd }}"
-          if [ -z "$CMD" ] || [[ "$CMD" == *"{{"* ]]; then
-            echo "::error::testing.test_command is empty or still a placeholder in .openspec/config.yaml"
-            echo "Set it during onboarding or edit the file directly."
-            exit 1
-          fi
-          echo "✓ test_command: $CMD"
-
-      - name: Run tests
-        if: steps.cfg.outputs.run_tests == 'true'
+      - name: Verify with the shared CLI
         env:
-          TEST_COMMAND: ${{ steps.cfg.outputs.test_cmd }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          TEMPLATE_REPOSITORY: ${{ vars.OPENSPEC_TEMPLATE }}
         run: |
-          set -euo pipefail
-          echo "→ $TEST_COMMAND"
-          bash -c "$TEST_COMMAND"
+          template_ref="${BASE_SHA:-HEAD}"
+          if [[ -f .openspec/template ]] && { [[ "$TEMPLATE_REPOSITORY" == true ]] || git cat-file -e "$template_ref:.openspec/template" 2>/dev/null; }; then
+            make test-template
+          else
+            args=(ci-tests)
+            if [[ -n "$BASE_SHA" ]]; then args+=(--base "$BASE_SHA"); fi
+            bash scripts/openspec "${args[@]}"
+          fi
+
+      - name: Retain verification reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: openspec-verification
+          path: .openspec/runs/*/verify-*.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7

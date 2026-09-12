@@ -9,6 +9,10 @@ This doc covers everything OpenSpec-specific. The top-level
 [`README.md`](../README.md) intentionally stays focused on the project
 itself.
 
+Start with [incremental adoption](ADOPTION.md) for the minimum workflow,
+optional capabilities, and current enforcement limitations. Agent rules live
+in the root [AGENTS.md](../AGENTS.md); setup is in [ONBOARDING.md](ONBOARDING.md).
+
 ---
 
 ## How it works
@@ -25,10 +29,10 @@ flowchart TD
     F --> G[Write tests per test_plan]
     G --> H([Open PR])
     H --> I[spec-check.yml<br/>deterministic gate]
-    H --> J[spec-ai-review.yml<br/>agentic alignment check]
+    H -. opt-in .-> J[spec-ai-review.yml<br/>advisory alignment check]
     H --> K[doc-drift.yml<br/>README/CHANGELOG touched?]
     I --> L{All checks pass?}
-    J --> L
+    J -. feedback .-> F
     K --> L
     L -- No --> F
     L -- Yes --> M([Merge])
@@ -60,8 +64,8 @@ stateDiagram-v2
     end note
 
     note right of approved
-        Optional gate when
-        approved_required_for_merge: true
+        Human sign-off policy.
+        Config flag is not enforced by CI.
     end note
 ```
 
@@ -74,9 +78,9 @@ stateDiagram-v2
 | Git hook (local) | `git commit` | Blocks commits with source changes but no spec |
 | Pre-commit framework (optional) | `git commit` | Runs gitleaks, yamllint, markdownlint, shellcheck |
 | CI — lint | Every PR | actionlint, yamllint, shellcheck, markdownlint |
-| CI — spec coverage | Every PR | Validates spec fields, status, test_plan |
+| CI — spec coverage | Project PRs | Shared YAML, readiness and configured policy checks |
 | CI — tests | Every PR | Runs `testing.test_command` from `.openspec/config.yaml` |
-| CI — agentic spec review | Every PR | AI checks if the implementation satisfies the spec |
+| CI — agentic spec review | Opt-in, spec-changing PRs | Advisory AI feedback; runtime must be validated |
 | CI — doc drift | Every PR | Source change must touch README/CHANGELOG/docs |
 | CI — DCO | Every PR | Every commit needs `Signed-off-by:` |
 | CI — security | Every PR | CodeQL SAST, gitleaks, dependency review |
@@ -105,7 +109,14 @@ scripts/openspec scaffold "fix login crash" --type bugfix
 scripts/openspec check           # all specs
 scripts/openspec check --strict  # treat draft as failure
 scripts/openspec check --pr 42   # PR coverage check (CI mode)
+scripts/openspec verify user-authentication # tests and persistent evidence
+scripts/openspec status         # active spec and evidence freshness
 ```
+
+The CLI and hooks require Bash, Git and Ruby >= 2.6 (standard libraries only).
+Use `check --template` for template maintenance; unresolved config fails in
+downstream projects. See [verification and execution](EXECUTION.md) for exit
+codes, policy details, pause/resume and opt-in bounded agent adapters.
 
 In Claude Code, use the slash commands instead:
 
@@ -180,7 +191,7 @@ scripts/
 ├── ISSUE_TEMPLATE/
 ├── labels.yml               # Source-of-truth label manifest
 ├── CODEOWNERS
-├── AGENTS.md                # Codex CLI instructions
+├── AGENTS.md                # GitHub-scoped rules; root AGENTS.md owns policy
 └── copilot-instructions.md  # GitHub Copilot instructions
 
 .claude/
@@ -248,7 +259,7 @@ Before a fork goes live:
 - [ ] `scripts/openspec --help` works
 - [ ] `.github/CODEOWNERS` lists real users / teams
 - [ ] Branch protection applied per [`BRANCH_PROTECTION.md`](BRANCH_PROTECTION.md)
-- [ ] Required checks include `Lint`, `OSSF Scorecard analysis`, `DCO`, `Doc drift`
+- [ ] Required checks match actual PR job names; do not require disabled AI review or scheduled-only Scorecard runs
 - [ ] **Settings → General → Allow auto-merge** enabled (Dependabot patches)
 - [ ] First Scorecard run is green (or you've triaged the findings)
 - [ ] Decided on commit-identity policy: DCO (default), signed commits, or both

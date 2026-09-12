@@ -39,6 +39,7 @@ secrets/
 .zed/
 
 # ─── Logs & temp ───────────────────────────────────────────────────────────
+.openspec/runs/
 *.log
 logs/
 *.tmp

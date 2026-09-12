@@ -17,6 +17,8 @@ name: Template Smoke Test
 #   - the placeholder substitution surface is intact
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened]
   schedule:
     - cron: "13 5 * * 1"   # 05:13 UTC every Monday
   push:
@@ -26,6 +28,16 @@ on:
       - "hooks/**"
       - ".claude/hooks/**"
       - ".github/workflows/template-smoke-test.yml"
+      - "scripts/**"
+      - "tests/**"
+      - ".openspec/**"
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - ".github/*instructions.md"
+      - ".github/AGENTS.md"
+      - ".github/workflows/spec-ai-review.yml"
+      - "docs/**"
+      - "Makefile"
   workflow_dispatch:
 
 permissions: read-all
@@ -35,8 +47,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  contracts:
+    name: Template contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Detect template maintenance
+        id: mode
+        run: |
+          if grep -q '{{' .openspec/config.yaml; then
+            echo "template=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Test template contracts
+        if: steps.mode.outputs.template == 'true'
+        run: make test-template
+
   smoke:
     name: Run template smoke test
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

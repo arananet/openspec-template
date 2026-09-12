@@ -5,6 +5,9 @@ All notable changes to `{{PROJECT_NAME}}` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+Historical dates below are Git author dates, not release dates. Uncommitted
+changes remain undated under `Unreleased`.
+
 <!--
 Guidelines:
 - Add a new entry under `## [Unreleased]` as you work — no batching up for release day.
@@ -19,6 +22,24 @@ Guidelines:
 ## [Unreleased]
 
 ### Added
+
+- Persistent verification evidence, stale-state detection, pause/resume and optional bounded local agent adapters (spec: reliable-verification-and-resumable-execution).
+
+### Changed
+
+- CLI, hooks and deterministic CI share a Ruby standard-library YAML engine; Ruby >= 2.6 is now required. `make test name=<slug>` verifies the selected spec.
+- Downstream checks reject missing/unconfigured config; template maintenance uses an explicit marker removed during adoption.
+
+### Fixed
+
+- Quoted/commented YAML parsing, ready-spec content checks, staged-spec validation, script/infrastructure coverage and enforcement of declared deterministic policy flags.
+
+## 2026-05-13
+
+Commits: `0a92a2d`, `035a861`, `5adbfbe`.
+
+### Added
+
 - Roles section in spec templates (`implementer`, `reviewer`, `qa`, `product_owner`) for per-spec responsibility assignment
 - `roles.default_*` block in `.openspec/config.yaml` and `.openspec/defaults.yaml` for repo-wide default role assignments
 - `scripts/openspec scaffold` now reads `roles.default_*` from config and pre-fills new specs
@@ -39,27 +60,10 @@ Guidelines:
 - `CLAUDE.md` Step 5 now instructs Claude to walk users through `roles` during scaffolding
 - `CLAUDE.md` Step 6 now instructs Claude to clean up template-internal specs
 
-### Changed
--
-
-### Deprecated
--
-
-### Removed
--
-
-### Fixed
--
-
-### Security
--
-
----
-
-## [0.1.0] — YYYY-MM-DD
+## 2026-04-15
 
 ### Added
-- Initial release.
 
-[Unreleased]: https://github.com/{{GITHUB_OWNER}}/{{PROJECT_NAME}}/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/{{GITHUB_OWNER}}/{{PROJECT_NAME}}/releases/tag/v0.1.0
+- Initial repository commit (`d07225a`). No tagged release date is recorded in the local Git history.
+
+[Unreleased]: https://github.com/{{GITHUB_OWNER}}/{{PROJECT_NAME}}/commits/HEAD

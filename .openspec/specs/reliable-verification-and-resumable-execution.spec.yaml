@@ -1,0 +1,72 @@
+# Feature Spec — created by scripts/openspec scaffold
+# Fill in all sections before moving status to 'review'.
+# Acceptance criteria are your definition of done — be specific.
+
+title: "Reliable verification and resumable execution"
+slug: "reliable-verification-and-resumable-execution"
+type: feature
+status: review
+
+author: "soda-agent[bot]"
+created_at: "2026-09-12"
+updated_at: "2026-09-12"
+
+roles:
+  implementer: null    # Who builds it — GitHub username or team
+  reviewer: null       # Who reviews the PR
+  qa: null             # Who validates acceptance_criteria
+  product_owner: null  # Who approves the spec (draft → approved)
+
+description: |
+  Implement the user's requested reliable controls, reproducible verification,
+  minimal resumable state and optional bounded execution. Preserve template
+  placeholders, the OpenSpec lifecycle, human approval and manual workflows.
+
+acceptance_criteria:
+  - "CLI, hooks and CI share structured YAML validation, coverage classification and documented enforcement settings."
+  - "Verification records the command, exit result, code/spec fingerprint and pass/fail/unverified verdict without claiming semantic acceptance."
+  - "Persistent state reports the active spec, next step, blocker and last result; changed inputs invalidate evidence."
+  - "Optional adapters have explicit opt-in, bounded attempts, time and reserved cost, pause/resume and no automatic approval, commits or cleanup."
+  - "Manual commands require no AI runtime; Ruby standard-library requirements and unsupported settings are documented honestly."
+  - "Offline regression tests exercise malformed YAML, policy flags, verification, stale state, pauses, bounds and fake adapters."
+
+test_plan:
+  - "Run focused Ruby integration tests in isolated Git repositories with no model calls."
+  - "Run make test-template, strict OpenSpec validation, shell syntax and workflow YAML checks."
+  - "Verify existing placeholders and changes are preserved and docs describe residual limits."
+
+qa_notes: |
+  <!-- Manual QA steps, edge cases to verify, or environments to test in.
+       Leave blank if fully covered by automated tests. -->
+
+out_of_scope:
+  - "Installing agents, changing remote branch protection, model calls or paid services."
+  - "Replacing human approvals, proving acceptance from test exit codes or enforcing external provider billing."
+
+implementation_skill: null
+  # Optional: name of the domain skill to invoke when implementing this spec.
+  # Overrides agents.implementation_skills.default in config.yaml.
+  # Examples: "frontend-pro", "backend-pro", "data-eng-pro", "devops-pro", "mobile-pro"
+
+eval_plan:
+  # Optional. Use for features that involve an AI model, agent, or LLM-backed component.
+  # Leave the block empty (or remove it) for fully deterministic features — test_plan is enough.
+  scenarios: []
+    # - ".harness/scenarios/example.scenario.yaml"
+  metrics: []
+    # - task_success        # Did the agent complete the task?
+    # - groundedness        # Are all claims traceable to the input?
+    # - tool_accuracy       # Did the agent use the right tools correctly?
+    # - refusal_accuracy    # Did the agent refuse when it should have?
+    # - latency_ms          # Wall-clock time budget
+    # - cost_estimate       # Token cost budget in USD
+
+technical_notes: |
+  <!-- Optional: constraints, dependencies, architecture decisions.
+       Do not design the solution here — save implementation details for the PR. -->
+
+linked_issues: []
+  # - "https://github.com/{{GITHUB_OWNER}}/{{PROJECT_NAME}}/issues/1"
+
+linked_prs: []
+  # - "https://github.com/{{GITHUB_OWNER}}/{{PROJECT_NAME}}/pull/1"

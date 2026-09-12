@@ -40,6 +40,16 @@ includes a `roles` block to assign responsibility (`implementer`,
 [`docs/OPENSPEC.md`](docs/OPENSPEC.md) for the full workflow, or
 [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contributor checklist.
 
+For small projects, use one concise spec and focused tests; no extra plan
+document or specialist is required. Roles are responsibilities, not a minimum
+team size. See [incremental adoption](docs/ADOPTION.md) for optional enterprise
+capabilities and known enforcement limits. AI spec review is opt-in.
+
+The OpenSpec CLI and hooks require Bash, Git and Ruby >= 2.6 (no gems).
+Run `bash scripts/openspec verify <slug>` to record test evidence and
+`bash scripts/openspec status` to inspect freshness. Manual work needs no AI
+runtime; bounded agent execution is separately opt-in. See [execution](docs/EXECUTION.md).
+
 ---
 
 ## Documentation
@@ -47,6 +57,8 @@ includes a `roles` block to assign responsibility (`implementer`,
 | Topic | Where |
 |---|---|
 | Spec-driven workflow | [`docs/OPENSPEC.md`](docs/OPENSPEC.md) |
+| Small-project adoption and assessment | [`docs/ADOPTION.md`](docs/ADOPTION.md) |
+| Guided project setup | [`docs/ONBOARDING.md`](docs/ONBOARDING.md) |
 | Branch protection setup | [`docs/BRANCH_PROTECTION.md`](docs/BRANCH_PROTECTION.md) |
 | Architecture decisions | [`docs/adr/`](docs/adr/) |
 | Security policy | [`SECURITY.md`](SECURITY.md) |
@@ -60,5 +72,11 @@ includes a `roles` block to assign responsibility (`implementer`,
 [MIT](LICENSE)
 
 ---
+
+## Developer
+
+Eduardo Arana
+
+## Support this with a ko-fi
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/H2H51MPWG)
