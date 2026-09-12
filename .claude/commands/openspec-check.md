@@ -23,11 +23,11 @@ Validate OpenSpec coverage for the current working changes.
 
 6. **Summary** — end with a table:
 
-```
-| File | Status | Issues |
-|------|--------|--------|
-| example.spec.yaml | PASS | — |
-| other.spec.yaml   | WARN | status: draft |
-```
+   ```markdown
+   | File | Status | Issues |
+   |------|--------|--------|
+   | example.spec.yaml | PASS | — |
+   | other.spec.yaml   | WARN | status: draft |
+   ```
 
 7. **If everything passes** — tell the user they're clear to commit and open a PR.

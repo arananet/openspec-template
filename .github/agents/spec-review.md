@@ -20,20 +20,24 @@ Your role is **semantic analysis**: does the code actually do what the spec says
 For each spec file found in the PR, assess:
 
 ### Acceptance criteria coverage
+
 - Read each item in `acceptance_criteria`.
 - Find evidence in the code diff that the criterion is implemented.
 - Flag any criterion with **no corresponding code change**.
 
 ### Test plan coverage
+
 - Read each item in `test_plan`.
 - Find evidence in the diff of a test that covers that item.
 - Flag any test plan item with **no corresponding test change**.
 
 ### Spec status gate
+
 - If `status: draft` — flag it. Draft specs should not be merged with production code.
 - If `status: review` or `status: approved` — proceed with analysis.
 
 ### Out-of-scope guard
+
 - If `out_of_scope` is defined, check whether the diff touches anything listed there.
 - If so, flag it as a potential scope creep.
 
@@ -41,7 +45,7 @@ For each spec file found in the PR, assess:
 
 Post a single PR comment with this structure:
 
-```
+```markdown
 ## OpenSpec AI Review
 
 ### `<slug>.spec.yaml` — <PASS|WARN|FAIL>

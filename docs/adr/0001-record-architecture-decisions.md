@@ -23,7 +23,7 @@ reader.
 
 Each ADR is a short Markdown file with the following structure:
 
-```
+```markdown
 # ADR NNNN: <title>
 
 **Date:** YYYY-MM-DD

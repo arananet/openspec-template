@@ -57,14 +57,16 @@ run against the current base.
 
 Two compatible options. Pick one; you can also enable both.
 
-**A. DCO (default — shipped with the template)**
+#### A. DCO (default — shipped with the template)
+
 - The `DCO` workflow (`.github/workflows/dco.yml`) checks every PR commit
   for a `Signed-off-by:` trailer matching the author.
 - Contributors sign off with `git commit -s`.
 - Lightweight, no key management, OSS-standard.
 - Add `DCO / DCO check` as a required status check above.
 
-**B. Signed commits (stricter — opt-in)**
+#### B. Signed commits (stricter — opt-in)
+
 - Settings → Rules → enable **Require signed commits**.
 - Protects against spoofed authorship; requires GPG/SSH key setup per
   contributor. See [GitHub's guide](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits).

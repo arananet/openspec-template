@@ -44,6 +44,7 @@ description: |
 
 acceptance_criteria:
   - "The Markdown lint action reads a supported checked-in configuration file rather than inline JSON, preserving existing rule settings and file exclusions."
+  - "Markdown files selected by the lint workflow pass its existing rules without changing agent instructions, governance policy, or template placeholders."
   - "Community health files exist at the repo root: SECURITY.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, SUPPORT.md, CHANGELOG.md — each uses {{PROJECT_NAME}} / {{GITHUB_OWNER}} / {{SECURITY_CONTACT}} placeholders that map cleanly to the onboarding flow"
   - ".github/CODEOWNERS exists with a documented ownership matrix using {{GITHUB_OWNER}}/{{TEAM_NAME}} placeholders and explicit ownership for .openspec/, .github/, and .claude/ directories"
   - ".github/FUNDING.yml exists with ko-fi (already referenced in README) and commented-out slots for github sponsors / open-collective"
@@ -69,6 +70,7 @@ acceptance_criteria:
   - "onboarding.yaml adds two new questions (security_contact, default_branch) with sensible defaults (security@{{domain}}, main) that flow into the new governance files"
 
 test_plan:
+  - "Regression: run markdownlint-cli2 0.18.1 with the workflow configuration and globs; require zero Markdown errors across the selected files."
   - "Regression: run ruby tests/workflows.rb to verify the Markdown action config path resolves to a supported file and preserves the existing rules; run make test-template and OpenSpec template validation."
   - "Unit: run `ls` checks verifying presence of SECURITY.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, SUPPORT.md, CHANGELOG.md, CODEOWNERS, FUNDING.yml, .gitignore, .gitattributes, .editorconfig"
   - "Unit: grep every new community-health file for {{PLACEHOLDER}} tokens and confirm they match tokens referenced in onboarding.yaml / defaults.yaml"

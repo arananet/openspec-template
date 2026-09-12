@@ -4,7 +4,7 @@ This directory contains the **test harness** for this project — executable sce
 
 ## Structure
 
-```
+```text
 .harness/
 ├── scenarios/       # Declarative eval scenarios (agent tasks, prompt runs, API calls)
 ├── evaluators/      # Custom evaluator logic (scripts, rubrics, graders)

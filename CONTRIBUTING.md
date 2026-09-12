@@ -61,6 +61,7 @@ scripts/openspec scaffold "my feature"
 ```
 
 Fill in:
+
 - `description` — what and why
 - `acceptance_criteria` — at least one verifiable item
 - `test_plan` — at least one test per AC
@@ -105,7 +106,7 @@ Commit messages follow a loose convention — keep them imperative and
 descriptive. If the project has `hooks.commit_msg.require_spec_reference`
 enabled, include the spec slug:
 
-```
+```text
 feat: add dark mode toggle
 
 spec: dark-mode-toggle

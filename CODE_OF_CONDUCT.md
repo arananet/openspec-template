@@ -3,8 +3,8 @@
 This project adopts the [Contributor Covenant][covenant], version 2.1, as its
 Code of Conduct. A full copy is available at the link below.
 
-- Covenant text: https://www.contributor-covenant.org/version/2/1/code_of_conduct/
-- Translations: https://www.contributor-covenant.org/translations
+- Covenant text: <https://www.contributor-covenant.org/version/2/1/code_of_conduct/>
+- Translations: <https://www.contributor-covenant.org/translations>
 
 ## Scope
 
@@ -26,6 +26,6 @@ Contributor Covenant v2.1.
 
 This Code of Conduct is adapted from the [Contributor Covenant][covenant],
 version 2.1, available at
-https://www.contributor-covenant.org/version/2/1/code_of_conduct.html.
+<https://www.contributor-covenant.org/version/2/1/code_of_conduct.html>.
 
 [covenant]: https://www.contributor-covenant.org
