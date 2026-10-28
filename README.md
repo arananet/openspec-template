@@ -90,7 +90,7 @@ runtime; bounded agent execution is separately opt-in. See [execution](docs/EXEC
 
 ## License
 
-[MIT](LICENSE)
+[Apache 2.0](LICENSE)
 
 ---
 
